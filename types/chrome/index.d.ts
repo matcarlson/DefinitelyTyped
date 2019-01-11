@@ -1097,6 +1097,12 @@ declare namespace chrome.contextMenus {
         menuItemId: any;
         /**
          * Optional.
+         * Since Chrome 35.
+         * The ID of the frame of the element where the context menu was clicked, if it was in a frame.
+         */
+        frameId?: number;
+        /**
+         * Optional.
           * Since Chrome 35.
          * The URL of the frame of the element where the context menu was clicked, if it was in a frame.
          */
@@ -1177,6 +1183,12 @@ declare namespace chrome.contextMenus {
          * The unique ID to assign to this item. Mandatory for event pages. Cannot be the same as another ID for this extension.
          */
         id?: string;
+        /**
+         * Optional.
+         * Since Chrome 62.
+         * Whether the item is visible in the menu.
+         */
+        visible?: boolean;
     }
 
     export interface UpdateProperties {
