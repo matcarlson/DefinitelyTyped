@@ -1,5 +1,5 @@
 // Type definitions for Masonry 4.2
-// Project: https://github.com/desandro/masonry
+// Project: https://github.com/desandro/masonry, https://masonry.desandro.com
 // Definitions by: Mark Wilson <https://github.com/m-a-wilson>, Travis Brown <https://github.com/warriorrocker>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 // TypeScript Version: 2.3
@@ -40,6 +40,11 @@ declare class Masonry {
 }
 
 declare namespace Masonry {
+    interface HiddenOrVisibleStyleOption {
+        transform?: string;
+        opacity?: number;
+    }
+
     interface Options {
         // layout
         itemSelector?: string;
@@ -51,10 +56,13 @@ declare namespace Masonry {
         originLeft?: boolean;
         originTop?: boolean;
         horizontalOrder?: boolean;
+        hiddenStyle?: HiddenOrVisibleStyleOption;
+        visibleStyle?: HiddenOrVisibleStyleOption;
 
         // setup
         containerStyle?: {};
         transitionDuration?: any;
+        stagger?: string | number;
         resize?: boolean;
         initLayout?: boolean;
     }

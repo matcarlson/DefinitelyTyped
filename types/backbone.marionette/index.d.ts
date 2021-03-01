@@ -1,13 +1,14 @@
 // Type definitions for Marionette 3.3
-// Project: https://github.com/marionettejs/
+// Project: https://github.com/marionettejs/, https://marionettejs.com
 // Definitions by: Zeeshan Hamid <https://github.com/zhamid>,
 //                 Natan Vivo <https://github.com/nvivo>,
 //                 Sven Tschui <https://github.com/sventschui>,
 //                 Volker Nauruhn <https://github.com/razorness>,
 //                 Ard Timmerman <https://github.com/confususs>,
 //                 J. Joe Koullas <https://github.com/jjoekoullas>
+//                 Julian Gonggrijp <https://github.com/jgonggrijp>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// TypeScript Version: 2.3
+// TypeScript Version: 2.8
 
 import * as Backbone from 'backbone';
 import * as JQuery from 'jquery';
@@ -407,20 +408,14 @@ export interface ObjectOptions extends RadioMixinOptions {
  * A base class which other classes can extend from. Object incorporates many
  * backbone conventions and utilities like initialize and Backbone.Events.
  */
-export class Object implements CommonMixin, RadioMixin, Backbone.Events {
+export class Object extends Backbone.EventsMixin implements CommonMixin, RadioMixin, Backbone.Events {
     constructor(options?: ObjectOptions);
 
-    on(eventName: string, callback?: (...args: any[]) => void, context?: any): any;
-    on(eventMap: EventsHash): any;
+    /**
+     * Faulty overgeneralization of Backbone.Events.on, for historical
+     * reasons.
+     */
     on(eventName: any, callback?: any, context?: any): any;
-    off(eventName?: string, callback?: (...args: any[]) => void, context?: any): any;
-    trigger(eventName: string, ...args: any[]): any;
-    bind(eventName: string, callback: (...args: any[]) => void, context?: any): any;
-    unbind(eventName?: string, callback?: (...args: any[]) => void, context?: any): any;
-    once(events: string, callback: (...args: any[]) => void, context?: any): any;
-    listenTo(object: any, events: string, callback: (...args: any[]) => void): any;
-    listenToOnce(object: any, events: string, callback: (...args: any[]) => void): any;
-    stopListening(object?: any, events?: string, callback?: (...args: any[]) => void): any;
 
     /**
      * Receives a hash of event names and functions and/or function names,
@@ -487,7 +482,7 @@ export class Object implements CommonMixin, RadioMixin, Backbone.Events {
     radioRequests: any;
 
     /**
-     * Check if this Oject has been destroyed.
+     * Check if this Object has been destroyed.
      */
     isDestroyed(): boolean;
 
@@ -502,7 +497,7 @@ export class Object implements CommonMixin, RadioMixin, Backbone.Events {
      * attached to the instance. Invoking the destroy method will trigger a
      * "before:destroy" event and corresponding onBeforeDestroy method call.
      * These calls will be passed any arguments destroy was invoked with.
-     * @param args any arguments to pass to the "before:destory" event and call to
+     * @param args any arguments to pass to the "before:destroy" event and call to
      * onBeforeDestroy.
      */
     destroy(...args: any[]): void;
@@ -1015,7 +1010,7 @@ export class View<TModel extends Backbone.Model> extends Backbone.View<TModel> i
      * Overrides Backbone.View.delegateEvents. By default Marionette uses
      * this to add handlers for events and triggers. (undocumented)
      */
-    delegateEvents(eventsArg: any): View<TModel>;
+    delegateEvents(eventsArg: any): this;
 
     /**
      * Get the triggers that are currently attached to this view.
@@ -1149,14 +1144,14 @@ export class View<TModel extends Backbone.Model> extends Backbone.View<TModel> i
      * setElement to handle if an element was previously defined.
      * (undocumented)
      */
-    setElement(element: any): View<TModel>;
+    setElement(element: any): this;
 
     /**
      * Renders the view. Given a template this method will build your HTML
      * from that template, mixing in model information and any extra
      * template context.
      */
-    render(): View<TModel>;
+    render(): this;
 
     /**
      * Used to determine which template to use. Override this method to add
@@ -1317,6 +1312,11 @@ export interface CollectionViewOptions<
     filter?(child?: TModel, index?: number, collection?: TCollection): boolean;
 
     /**
+     * Prevent some of the underlying children from being attached to the DOM.
+     */
+    viewFilter?: ((view?: typeof Backbone.View, index?: number, children?: Backbone.View[]) => boolean) | Backbone.ObjectHash | string;
+
+    /**
      * Specify a view to use if the collection has no children.
      */
     emptyView?: (() => typeof Backbone.View) | typeof Backbone.View;
@@ -1404,7 +1404,7 @@ export class CollectionView<TModel extends Backbone.Model, TView extends View<TM
      * the entire collection. It loops through each of the children in the
      * collection and renders them individually as an childView.
      */
-    render(): CollectionView<TModel, TView, TCollection>;
+    render(): this;
 
     /**
      * This method is used move the HTML from the element buffer into the

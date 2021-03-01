@@ -6,8 +6,10 @@ class Slider extends React.Component<ReactSlider.ReactSliderProps> {
         return (
             <ReactSlider
                 snapDragDisabled
-                barClassName="classnameForBar"
-                withBars={false}
+                trackClassName="classnameForBar"
+                withTracks={false}
+                marks={5}
+                renderMark={props => <span {...props} />}
                 {...this.props}
             />
         );

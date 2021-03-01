@@ -5,8 +5,9 @@ declare module "meteor/ejson" {
         toJSONValue(): JSONable;
         typeName(): string;
     }
+    type EJSONableProperty = number | string | boolean | Object | number[] | string[] | Object[] | Date | Uint8Array | EJSONableCustomType | undefined | null;
     interface EJSONable {
-        [key: string]: number | string | boolean | Object | number[] | string[] | Object[] | Date | Uint8Array | EJSONableCustomType | undefined | null;
+        [key: string]: EJSONableProperty;
     }
     interface JSONable {
         [key: string]: number | string | boolean | Object | number[] | string[] | Object[] | undefined | null;
@@ -25,7 +26,7 @@ declare module "meteor/ejson" {
         function fromJSONValue(val: JSONable): any;
 
         function isBinary(x: Object): boolean;
-        var newBinary: any;
+        function newBinary(size: number): Uint8Array;
 
         function parse(str: string): EJSON;
 

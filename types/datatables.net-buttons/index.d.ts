@@ -1,6 +1,9 @@
 // Type definitions for JQuery DataTables Buttons extension 1.4
-// Project: http://datatables.net/extensions/buttons/
-// Definitions by: Kiarash Ghiaseddin <https://github.com/Silver-Connection>, Sam Germano <https://github.com/SammyG4Free>, Jim Hartford <https://github.com/jimhartford>
+// Project: http://datatables.net/extensions/buttons/, https://datatables.net
+// Definitions by: Kiarash Ghiaseddin <https://github.com/Silver-Connection>
+//                 Sam Germano <https://github.com/SammyG4Free>
+//                 Jim Hartford <https://github.com/jimhartford>
+//                 Chris Frewin <https://github.com/princefishthrower>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.4
 
@@ -13,6 +16,10 @@ declare namespace DataTables {
          * Buttons extension options
          */
         buttons?: boolean | string[] | ButtonsSettings | ButtonSettings[];
+    }
+
+    interface LanguageSettings {
+        buttons?: {};
     }
 
     interface StaticFunctions {
@@ -293,6 +300,7 @@ declare namespace DataTables {
 
     interface ExtButtonsSettings {
         collection: ExtButtonsCollectionSettings;
+        csvHtml5: ButtonSettings;
     }
 
     interface ExtButtonsCollectionSettings {
@@ -437,8 +445,9 @@ declare namespace DataTables {
         //#endregion ColVis
     }
 
+    type ButtonSelectorTypes = string | number | JQuery;
     interface ButtonExportOptions {
-        columns?: string | number | string[] | number[];
+        columns?: ButtonSelectorTypes | ButtonSelectorTypes[];
     }
 
     type FunctionButtonCustomizeData = (content: any) => void;

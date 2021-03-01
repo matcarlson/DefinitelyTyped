@@ -1,30 +1,73 @@
 // Type definitions for mysql 2.15
 // Project: https://github.com/mysqljs/mysql
 // Definitions by:  William Johnston <https://github.com/wjohnsto>
-// 	                Kacper Polak <https://github.com/kacepe>
-// 	                Krittanan Pingclasai <https://github.com/kpping>
-// 	                James Munro <https://github.com/jdmunro>
+//                     Kacper Polak <https://github.com/kacepe>
+//                     Krittanan Pingclasai <https://github.com/kpping>
+//                     James Munro <https://github.com/jdmunro>
+//                     Sanders DeNardi <https://github.com/sedenardi>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.1
 
 /// <reference types="node" />
 
-import stream = require("stream");
-import tls = require("tls");
+import stream = require('stream');
+import tls = require('tls');
+import events = require('events');
 
 export interface EscapeFunctions {
+    /**
+     * Escape an untrusted string to be used as a SQL value. Use this on user
+     * provided data.
+     * @param value Value to escape
+     * @param stringifyObjects If true, don't convert objects into SQL lists
+     * @param timeZone Convert dates from UTC to the given timezone.
+     */
     escape(value: any, stringifyObjects?: boolean, timeZone?: string): string;
 
+    /**
+     * Escape an untrusted string to be used as a SQL identifier (database,
+     * table, or column name). Use this on user provided data.
+     * @param value Value to escape.
+     * @param forbidQualified Don't allow qualified identifiers (eg escape '.')
+     */
     escapeId(value: string, forbidQualified?: boolean): string;
 
+    /**
+     * Safely format a SQL query containing multiple untrusted values.
+     * @param sql Query, with insertion points specified with ? (for values) or
+     * ?? (for identifiers)
+     * @param values Array of objects to insert.
+     * @param stringifyObjects If true, don't convert objects into SQL lists
+     * @param timeZone Convert dates from UTC to the given timezone.
+     */
     format(sql: string, values: any[], stringifyObjects?: boolean, timeZone?: string): string;
 }
 
-// implements EscapeFunctions
+/**
+ * Escape an untrusted string to be used as a SQL value. Use this on user
+ * provided data.
+ * @param value Value to escape
+ * @param stringifyObjects If true, don't convert objects into SQL lists
+ * @param timeZone Convert dates from UTC to the given timezone.
+ */
 export function escape(value: any, stringifyObjects?: boolean, timeZone?: string): string;
 
+/**
+ * Escape an untrusted string to be used as a SQL identifier (database,
+ * table, or column name). Use this on user provided data.
+ * @param value Value to escape.
+ * @param forbidQualified Don't allow qualified identifiers (eg escape '.')
+ */
 export function escapeId(value: string, forbidQualified?: boolean): string;
 
+/**
+ * Safely format a SQL query containing multiple untrusted values.
+ * @param sql Query, with insertion points specified with ? (for values) or
+ * ?? (for identifiers)
+ * @param values Array of objects to insert.
+ * @param stringifyObjects If true, don't convert objects into SQL lists
+ * @param timeZone Convert dates from UTC to the given timezone.
+ */
 export function format(sql: string, values: any[], stringifyObjects?: boolean, timeZone?: string): string;
 
 export function createConnection(connectionUri: string | ConnectionConfig): Connection;
@@ -33,9 +76,17 @@ export function createPool(config: PoolConfig | string): Pool;
 
 export function createPoolCluster(config?: PoolClusterConfig): PoolCluster;
 
-export function raw(sql: string): () => string;
+/**
+ * Create a string that will be inserted unescaped with format(), escape().
+ * Note: the value will still be escaped if used as an identifier (??) by
+ * format().
+ * @param sql
+ */
+export function raw(sql: string): {
+    toSqlString: () => string
+};
 
-export interface Connection extends EscapeFunctions {
+export interface Connection extends EscapeFunctions, events.EventEmitter {
     config: ConnectionConfig;
 
     state: 'connected' | 'authenticated' | 'disconnected' | 'protocol_error' | string;
@@ -69,65 +120,81 @@ export interface Connection extends EscapeFunctions {
     statistics(options?: QueryOptions, callback?: (err: MysqlError) => void): void;
     statistics(callback: (err: MysqlError) => void): void;
 
-    end(callback?: (err: MysqlError, ...args: any[]) => void): void;
-    end(options: any, callback: (err: MysqlError, ...args: any[]) => void): void;
+    /**
+     * Close the connection. Any queued data (eg queries) will be sent first. If
+     * there are any fatal errors, the connection will be immediately closed.
+     * @param callback Handler for any fatal error
+     */
+    end(callback?: (err?: MysqlError) => void): void;
+    end(options: any, callback: (err?: MysqlError) => void): void;
 
+    /**
+     * Close the connection immediately, without waiting for any queued data (eg
+     * queries) to be sent. No further events or callbacks will be triggered.
+     */
     destroy(): void;
 
+    /**
+     * Pause the connection. No more 'result' events will fire until resume() is
+     * called.
+     */
     pause(): void;
 
+    /**
+     * Resume the connection.
+     */
     resume(): void;
-
-    on(ev: 'drain' | 'connect', callback: () => void): Connection;
-
-    on(ev: 'end', callback: (err?: MysqlError) => void): Connection;
-
-    on(ev: 'fields', callback: (fields: any[]) => void): Connection;
-
-    on(ev: 'error', callback: (err: MysqlError) => void): Connection;
-
-    on(ev: 'enqueue', callback: (...args: any[]) => void): Connection;
-
-    on(ev: string, callback: (...args: any[]) => void): this;
 }
 
 export interface PoolConnection extends Connection {
     release(): void;
 
+    /**
+     * Close the connection. Any queued data (eg queries) will be sent first. If
+     * there are any fatal errors, the connection will be immediately closed.
+     * @param callback Handler for any fatal error
+     */
     end(): void;
 
+    /**
+     * Close the connection immediately, without waiting for any queued data (eg
+     * queries) to be sent. No further events or callbacks will be triggered.
+     */
     destroy(): void;
 }
 
-export interface Pool extends EscapeFunctions {
-    config: PoolConfig;
+export interface Pool extends EscapeFunctions, events.EventEmitter {
+    config: PoolActualConfig;
 
     getConnection(callback: (err: MysqlError, connection: PoolConnection) => void): void;
 
-    acquireConnection(connection: PoolConnection, callback: (err: MysqlError, connection: PoolConnection) => void): void;
+    acquireConnection(
+        connection: PoolConnection,
+        callback: (err: MysqlError, connection: PoolConnection) => void,
+    ): void;
 
-    releaseConnection(connection: PoolConnection): void;
-
+    /**
+     * Close the connection. Any queued data (eg queries) will be sent first. If
+     * there are any fatal errors, the connection will be immediately closed.
+     * @param callback Handler for any fatal error
+     */
     end(callback?: (err: MysqlError) => void): void;
 
     query: QueryFunction;
-
-    on(ev: 'connection' | 'acquire' | 'release', callback: (connection: PoolConnection) => void): Pool;
-
-    on(ev: 'error', callback: (err: MysqlError) => void): Pool;
-
-    on(ev: 'enqueue', callback: (err?: MysqlError) => void): Pool;
-
-    on(ev: string, callback: (...args: any[]) => void): Pool;
 }
 
-export interface PoolCluster {
+export interface PoolCluster extends events.EventEmitter {
     config: PoolClusterConfig;
 
     add(config: PoolConfig): void;
 
     add(id: string, config: PoolConfig): void;
 
+    /**
+     * Close the connection. Any queued data (eg queries) will be sent first. If
+     * there are any fatal errors, the connection will be immediately closed.
+     * @param callback Handler for any fatal error
+     */
     end(callback?: (err: MysqlError) => void): void;
 
     of(pattern: string, selector?: string): Pool;
@@ -142,11 +209,11 @@ export interface PoolCluster {
 
     getConnection(pattern: string, callback: (err: MysqlError, connection: PoolConnection) => void): void;
 
-    getConnection(pattern: string, selector: string, callback: (err: MysqlError, connection: PoolConnection) => void): void;
-
-    on(ev: string, callback: (...args: any[]) => void): PoolCluster;
-
-    on(ev: 'remove' | 'offline' | 'remove', callback: (nodeId: string) => void): PoolCluster;
+    getConnection(
+        pattern: string,
+        selector: string,
+        callback: (err: MysqlError, connection: PoolConnection) => void,
+    ): void;
 }
 
 // related to Query
@@ -214,15 +281,23 @@ export interface Query {
     on(ev: 'end', callback: () => void): Query;
 }
 
-export interface GeometryType extends Array<{x: number, y: number} | GeometryType> {
+export interface GeometryType extends Array<{ x: number; y: number } | GeometryType> {
     x: number;
     y: number;
 }
 
-export type TypeCast = boolean | (
-    (field: FieldInfo
-        & { type: string, length: number, string(): string, buffer(): Buffer, geometry(): null |  GeometryType},
-    next: () => void) => any);
+export type TypeCast =
+    | boolean
+    | ((
+          field: UntypedFieldInfo & {
+              type: string;
+              length: number;
+              string(): string;
+              buffer(): Buffer;
+              geometry(): null | GeometryType;
+          },
+          next: () => void,
+      ) => any);
 
 export type queryCallback = (err: MysqlError | null, results?: any, fields?: FieldInfo[]) => void;
 
@@ -232,7 +307,7 @@ export interface QueryFunction {
 
     (options: string | QueryOptions, callback?: queryCallback): Query;
 
-    (options: string, values: any, callback?: queryCallback): Query;
+    (options: string | QueryOptions, values: any, callback?: queryCallback): Query;
 }
 
 export interface QueryOptions {
@@ -378,7 +453,7 @@ export interface ConnectionConfig extends ConnectionOptions {
     /**
      * A custom query format function
      */
-    queryFormat?(query: string, values: any): void;
+    queryFormat?(query: string, values: any): string;
 
     /**
      * When dealing with big numbers (BIGINT and DECIMAL columns) in the database, you should enable this option
@@ -424,7 +499,7 @@ export interface ConnectionConfig extends ConnectionOptions {
     /**
      * List of connection flags to use other than the default ones. It is also possible to blacklist default ones
      */
-    flags?: string[];
+    flags?: string | string[];
 
     /**
      * object with ssl parameters or a string containing name of ssl profile
@@ -432,7 +507,7 @@ export interface ConnectionConfig extends ConnectionOptions {
     ssl?: string | (tls.SecureContextOptions & { rejectUnauthorized?: boolean });
 }
 
-export interface PoolConfig extends ConnectionConfig {
+export interface PoolSpecificConfig {
     /**
      * The milliseconds before a timeout occurs during the connection acquisition. This is slightly different from connectTimeout,
      * because acquiring a pool connection does not always involve making a connection. (Default: 10 seconds)
@@ -456,6 +531,13 @@ export interface PoolConfig extends ConnectionConfig {
      * is no limit to the number of queued connection requests. (Default: 0)
      */
     queueLimit?: number;
+}
+
+export interface PoolConfig extends PoolSpecificConfig, ConnectionConfig {
+}
+
+export interface PoolActualConfig extends PoolSpecificConfig {
+    connectionConfig: ConnectionConfig;
 }
 
 export interface PoolClusterConfig {
@@ -534,6 +616,30 @@ export interface MysqlError extends Error {
     sqlMessage?: string;
 }
 
+// Result from an insert, update, or delete statement.
+export interface OkPacket {
+    fieldCount: number;
+    /**
+     * The number of affected rows from an insert, update, or delete statement.
+     */
+    affectedRows: number;
+    /**
+     * The insert id after inserting a row into a table with an auto increment primary key.
+     */
+    insertId: number;
+    serverStatus?: number;
+    warningCount?: number;
+    /**
+     * The server result message from an insert, update, or delete statement.
+     */
+    message: string;
+    /**
+     * The number of changed rows from an update statement. "changedRows" differs from "affectedRows" in that it does not count updated rows whose values were not changed.
+     */
+    changedRows: number;
+    protocol41: boolean;
+}
+
 export const enum Types {
     DECIMAL = 0x00, // aka DECIMAL (http://dev.mysql.com/doc/refman/5.0/en/precision-math-decimal-changes.html)
     TINY = 0x01, // aka TINYINT, 1 byte
@@ -568,7 +674,7 @@ export const enum Types {
     GEOMETRY = 0xff, // aka GEOMETRY
 }
 
-export interface FieldInfo {
+export interface UntypedFieldInfo {
     catalog: string;
     db: string;
     table: string;
@@ -577,10 +683,13 @@ export interface FieldInfo {
     orgName: string;
     charsetNr: number;
     length: number;
-    type: Types;
     flags: number;
     decimals: number;
     default?: string;
     zeroFill: boolean;
     protocol41: boolean;
+}
+
+export interface FieldInfo extends UntypedFieldInfo {
+    type: Types;
 }

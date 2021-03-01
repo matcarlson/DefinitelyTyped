@@ -1,4 +1,4 @@
-// Type definitions for Naver Maps JavaScript API 3.0
+// Type definitions for non-npm package Naver Maps JavaScript API 3.0
 // Project: https://navermaps.github.io/maps.js
 // Definitions by: Ckboyjiy <https://github.com/ckboyjiy>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
@@ -659,7 +659,7 @@ declare namespace naver.maps {
     mapSystemProjection: any;
     constructor(mapDiv: string | HTMLElement, mapOptions?: MapOptions);
     addPane(name: string, elementOrIndex: HTMLElement | number): void;
-    destory(): void;
+    destroy(): void;
     fitBounds(bounds: any, margin?: any): void;
     getBounds(): Bounds;
     getCenter(): Coord;

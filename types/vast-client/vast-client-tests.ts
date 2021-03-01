@@ -8,20 +8,32 @@ import {
     VASTClientCustomStorage,
     VASTClientUrlHandler,
     VastCreativeCompanion,
+    VastAdvertiser,
+    VastUrlValue,
+    StaticResource,
+    VastAdExtension,
 } from 'vast-client';
 
 const VASTUrl = 'http://example.dailymotion.com/vast.xml';
-const VASTXml = new DOMParser().parseFromString("<vast></vast>", "text/xml");
+const VASTXml = new DOMParser().parseFromString('<vast></vast>', 'text/xml');
 
 function cbSuccess(response: VastResponse): void {
     // process the VAST response
     const ads: VastAd[] = response.ads;
+    const advertiser: VastAdvertiser[] = ads[0].advertiser;
+    const impressionUrls: VastUrlValue[] = ads[0].impressionURLTemplates;
+    const extensions: VastAdExtension[] = ads[0].extensions;
+    const extensionName: string | null = extensions[0].name;
+    const extensionValue: any = extensions[0].value;
     const linearCreative = response.ads[0].creatives.filter(creative => {
         return creative.type === 'linear';
     });
     if (linearCreative && linearCreative.length > 0) {
         const creative = linearCreative[0] as VastCreativeLinear;
         const mediaFiles = creative.mediaFiles;
+        const videoClickThroughURLTemplate: VastUrlValue | null = creative.videoClickThroughURLTemplate;
+        const videoClickTrackingURLTemplates: VastUrlValue[] = creative.videoClickTrackingURLTemplates;
+        const videoCustomClickURLTemplates: VastUrlValue[] = creative.videoCustomClickURLTemplates;
     }
 }
 
@@ -48,11 +60,20 @@ const client = new VASTClient(5, 60000, customStorage);
 client.cappingFreeLunch = 2;
 
 // Those following client.get calls won't be done
-client.get(VASTUrl).then(cbSuccess).catch(cbError);
-client.get(VASTUrl).then(cbSuccess).catch(cbError);
+client
+    .get(VASTUrl)
+    .then(cbSuccess)
+    .catch(cbError);
+client
+    .get(VASTUrl)
+    .then(cbSuccess)
+    .catch(cbError);
 
 // VASTUrl will be called
-client.get(VASTUrl).then(cbSuccess).catch(cbError);
+client
+    .get(VASTUrl)
+    .then(cbSuccess)
+    .catch(cbError);
 
 // Ignore any call made 5 minutes or less after one.
 client.cappingMinimumTimeInterval = 5 * 60 * 1000;
@@ -61,13 +82,19 @@ client.cappingMinimumTimeInterval = 5 * 60 * 1000;
 // 2 minutes later
 
 // Ignored
-client.get(VASTUrl).then(cbSuccess).catch(cbError);
+client
+    .get(VASTUrl)
+    .then(cbSuccess)
+    .catch(cbError);
 
 // ...
 // 4 minutes later
 
 // Work
-client.get(VASTUrl).then(cbSuccess).catch(cbError);
+client
+    .get(VASTUrl)
+    .then(cbSuccess)
+    .catch(cbError);
 
 // with options
 const urlHandler: VASTClientUrlHandler = {
@@ -75,19 +102,23 @@ const urlHandler: VASTClientUrlHandler = {
         // get xml
         cb(null, VASTXml);
         // or call with error
-        cb(new Error("no vast"));
+        cb(new Error('no vast'));
     },
 };
-client.get(VASTUrl, { urlHandler }).then(cbSuccess).catch(cbError);
+client
+    .get(VASTUrl, { urlHandler })
+    .then(cbSuccess)
+    .catch(cbError);
 
 if (client.hasRemainingAds()) {
-    client.getNextAds()
-    .then(res => {
-        // Do something with the next Ads
-    })
-    .catch(err => {
-        // Deal with the error
-    });
+    client
+        .getNextAds()
+        .then(res => {
+            // Do something with the next Ads
+        })
+        .catch(err => {
+            // Deal with the error
+        });
 }
 
 // PARSER
@@ -104,22 +135,31 @@ const count = parser.countURLTemplateFilters();
 
 parser.clearUrlTemplateFilters();
 
-parser.trackVastError(['http://errorUrlTemplate.com/'], { ERRORCODE: 301 }, { ERRORMESSAGE: "error message" });
+parser.trackVastError(['http://errorUrlTemplate.com/'], { ERRORCODE: 301 }, { ERRORMESSAGE: 'error message' });
 
-parser.fetchVAST(VASTUrl).then(xml => {
-    // do something with xml document
-    return xml.documentElement.nodeName === 'VAST';
-}).catch(error => {
-    // handle error
-});
+parser
+    .fetchVAST(VASTUrl)
+    .then(xml => {
+        // do something with xml document
+        return xml.documentElement.nodeName === 'VAST';
+    })
+    .catch(error => {
+        // handle error
+    });
 
 const options = {
     withCredentials: true,
-    wrapperLimit: 5
+    wrapperLimit: 5,
 };
-parser.getAndParseVAST(VASTUrl, options).then(cbSuccess).catch(cbError);
+parser
+    .getAndParseVAST(VASTUrl, options)
+    .then(cbSuccess)
+    .catch(cbError);
 
-parser.parseVAST(VASTXml).then(cbSuccess).catch(cbError);
+parser
+    .parseVAST(VASTXml)
+    .then(cbSuccess)
+    .catch(cbError);
 
 // TRACKER
 
@@ -127,7 +167,12 @@ parser.parseVAST(VASTXml).then(cbSuccess).catch(cbError);
 const vastTracker = new VASTTracker(client, {} as VastAd, {} as VastCreativeLinear);
 
 // Create a VAST Tracker instance for a companion ad
-const vastTrackerCompanion = new VASTTracker(client, {} as VastAd, {} as VastCreativeLinear, {} as VastCreativeCompanion);
+const vastTrackerCompanion = new VASTTracker(
+    client,
+    {} as VastAd,
+    {} as VastCreativeLinear,
+    {} as VastCreativeCompanion,
+);
 
 const onSkip = () => {
     console.log('Ad unit skipped');
@@ -141,7 +186,7 @@ vastTracker.off('skip', onSkip);
 const player = document.getElementById('playerId') as HTMLVideoElement;
 
 // Bind a timeupdate listener to the player
-player.addEventListener('timeupdate', (e) => {
+player.addEventListener('timeupdate', e => {
     vastTracker.setProgress((e.target as HTMLVideoElement).currentTime);
 });
 
@@ -150,7 +195,7 @@ vastTracker.on('firstQuartile', () => {
 });
 
 // Bind a volumechange listener to the player
-player.addEventListener('volumechange', (e) => {
+player.addEventListener('volumechange', e => {
     vastTracker.setMuted((e.target as HTMLVideoElement).muted);
 });
 
@@ -163,8 +208,12 @@ vastTracker.on('unmute', () => {
 });
 
 // Bind play/pause listeners to the player
-player.addEventListener('play', () => { vastTracker.setPaused(false); });
-player.addEventListener('pause', () => { vastTracker.setPaused(true); });
+player.addEventListener('play', () => {
+    vastTracker.setPaused(false);
+});
+player.addEventListener('pause', () => {
+    vastTracker.setPaused(true);
+});
 
 vastTracker.on('resume', () => {
     // resume tracking URLs have been called
@@ -176,7 +225,7 @@ vastTracker.on('pause', () => {
 
 // Bind fullscreenchange listener to the player
 // Note that the fullscreen API is still vendor-prefixed in browsers
-player.addEventListener('fullscreenchange', (e) => {
+player.addEventListener('fullscreenchange', e => {
     const isFullscreen = true;
     vastTracker.setFullscreen(isFullscreen);
 });
@@ -202,7 +251,7 @@ function decreasePlayerSize(): void {
     // do nothing
 }
 
-expandButton.addEventListener('click', (e) => {
+expandButton.addEventListener('click', e => {
     playerExpanded = !playerExpanded;
     if (playerExpanded) {
         increasePlayerSize();
@@ -283,3 +332,39 @@ vastTracker.on('clickthrough', (url: string) => {
     // Open the resolved clickThrough url
     document.location.href = url;
 });
+
+// Bind acceptInvitation listener to the invitation button
+const invitationButton = document.getElementById('invitationButtonId') as HTMLButtonElement;
+
+// Bind click listener to the button
+invitationButton.addEventListener('click', () => {
+    vastTracker.track('acceptInvitation');
+    vastTracker.track('acceptInvitationLinear', {once: false});
+    vastTracker.track('acceptInvitationLinear', {macros: {test: 'value'}, once: false});
+    vastTracker.track('acceptInvitationLinear', {macros: {test: 'value'}});
+});
+
+const vastAdvertiserWithId: VastAdvertiser = {
+    id: '123',
+    value: 'advertiser',
+};
+const vastAdvertiserWithoutId: VastAdvertiser = {
+    id: null,
+    value: 'advertiser',
+};
+const vastUrlValueWithId: VastUrlValue = {
+    id: '123',
+    url: 'https://my-sample.url',
+};
+const vastUrlValueWithoutId: VastUrlValue = {
+    id: null,
+    url: 'https://my-sample.url',
+};
+const staticResourceWithType: StaticResource = {
+    url: 'https://my-sample.url',
+    creativeType: 'COMPANION',
+};
+const staticResourceWithoutType: StaticResource = {
+    url: 'https://my-sample.url',
+    creativeType: null,
+};

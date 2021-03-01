@@ -14,28 +14,32 @@ class SessionService extends Ember.Service {
     currentUser: User;
 }
 
+declare module '@ember/service' {
+    interface Registry {
+        session: SessionService;
+    }
+}
+
 const CurrentUserEmailHelper = Ember.Helper.extend({
-    session: Ember.inject.service() as Ember.ComputedProperty<SessionService>,
-    onNewUser: Ember.observer('session.currentUser', function(this: Ember.Helper) {
+    session: Ember.inject.service('session'),
+    onNewUser: Ember.observer('session.currentUser', function (this: Ember.Helper) {
         this.recompute();
     }),
     compute(): string {
-        return this.get('session')
-            .get('currentUser')
-            .get('email');
+        return this.get('session').get('currentUser').get('email');
     },
 });
 
 import { helper } from '@ember/component/helper';
 
 function typedHelp(/*params, hash*/) {
-  return 'my type of help';
+    return 'my type of help';
 }
 
 export default helper(typedHelp);
 
 function arrayNumHelp(/*params, hash*/) {
-  return [1, 2, 3];
+    return [1, 2, 3];
 }
 
 helper(arrayNumHelp);

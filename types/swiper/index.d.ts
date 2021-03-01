@@ -1,11 +1,13 @@
-// Type definitions for Swiper 4.4
-// Project: https://github.com/nolimits4web/Swiper
+// Type definitions for Swiper 5.4
+// Project: https://github.com/nolimits4web/Swiper, http://www.idangero.us/swiper
 // Definitions by: Sebastián Galiano <https://github.com/sgaliano>
 //                 Luca Trazzi <https://github.com/lucax88x>
 //                 Eugene Matseruk <https://github.com/ematseruk>
 //                 Luiz M. <https://github.com/odahcam>
 //                 Justin Abene <https://github.com/jmca>
 //                 Asif Rahman <https://github.com/daem0ndev>
+//                 Liad Idan <https://github.com/LiadIdan>
+//                 Sangwon Lee <https://github.com/john015>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.9
 
@@ -39,7 +41,10 @@ export type CommonEvent =
     | 'fromEdge'
     | 'setTranslate'
     | 'setTransition'
-    | 'resize';
+    | 'resize'
+    | 'observerUpdate'
+    | 'beforeLoopFix'
+    | 'loopFix';
 
 /**
  * Swiper pagination event names.
@@ -57,9 +62,14 @@ export type AutoplayEvent = 'autoplayStart' | 'autoplayStop' | 'autoplay';
 export type LazyLoadingEvent = 'lazyImageLoad' | 'lazyImageReady';
 
 /**
+ * Swiper hash-navigation event names.
+ */
+export type HashNavigationEvent = 'hashChange' | 'hashSet';
+
+/**
  * Swiper event names.
  */
-export type SwiperEvent = CommonEvent | PaginationEvent | AutoplayEvent | LazyLoadingEvent;
+export type SwiperEvent = CommonEvent | PaginationEvent | AutoplayEvent | LazyLoadingEvent | HashNavigationEvent;
 
 /**
  * Swiper module types.
@@ -102,6 +112,13 @@ export interface SwiperOptions {
      * @default true
      */
     init?: boolean;
+
+    /**
+     * Swiper will recalculate slides position on window resize (orientationchange)
+     *
+     * @default true
+     */
+    updateOnWindowResize?: boolean;
 
     /**
      * Index number of initial slide.
@@ -210,7 +227,21 @@ export interface SwiperOptions {
     /**
      * Register event handlers.
      */
-    on?: { [key in SwiperEvent]?: () => void };
+    on?: {
+        [key in Exclude<SwiperEvent, LazyLoadingEvent>]?: (this: Swiper, swiper: Swiper) => void;
+    } & {
+        [key in LazyLoadingEvent]?: (this: Swiper, slideEl: HTMLElement, imageEl: HTMLImageElement) => void;
+    };
+
+    // CSS Scroll Snap
+
+    /**
+     * When enabled it will use modern CSS Scroll Snap API.
+     * It doesn't support all of Swiper's features, but potentially should bring a much better performance in simple configurations.
+     *
+     * @default false
+     */
+    cssMode?: boolean;
 
     // Slides grid
 
@@ -243,9 +274,25 @@ export interface SwiperOptions {
     slidesPerGroup?: number;
 
     /**
+     * The parameter works in the following way: If slidesPerGroupSkip equals 0 (default), no slides are excluded from grouping, and the resulting behaviour is the same as without this change.
+     * If slidesPerGroupSkip is equal or greater than 1 the first X slides are treated as single groups, whereas all following slides are grouped by the slidesPerGroup value.
+     *
+     * @default 0
+     */
+    slidesPerGroupSkip?: number;
+
+    /**
      * If true, then active slide will be centered, not always on the left side.
      */
     centeredSlides?: boolean;
+
+    /**
+     * If true, then active slide will be centered without adding gaps at the beginning and end of slider.
+     * Required centeredSlides: true. Not intended to be used with loop or pagination
+     *
+     * @default false
+     */
+    centeredSlidesBounds?: boolean;
 
     /**
      * Add (in px) additional slide offset in the beginning of the container (before all slides)
@@ -421,6 +468,14 @@ export interface SwiperOptions {
     breakpointsInverse?: boolean;
 
     // Observer
+
+    /**
+     * Set to true if you also need to watch Mutations for Swiper slide children elements
+     *
+     * @default false
+     */
+    observeSlideChildren?: boolean;
+
     observer?: boolean;
     observeParents?: boolean;
 
@@ -428,16 +483,17 @@ export interface SwiperOptions {
     containerModifierClass?: string;
     slideClass?: string;
     slideActiveClass?: string;
-    slideDuplicatedActiveClass?: string;
+    slideDuplicateActiveClass?: string;
     slideVisibleClass?: string;
     slideDuplicateClass?: string;
     slideNextClass?: string;
-    slideDuplicatedNextClass?: string;
+    slideDuplicateNextClass?: string;
     slidePrevClass?: string;
-    slideDuplicatedPrevClass?: string;
+    slideDuplicatePrevClass?: string;
     wrapperClass?: string;
 
     // Components
+    controller?: ControllerOptions | boolean;
     navigation?: NavigationOptions;
     pagination?: PaginationOptions;
     scrollbar?: ScrollbarOptions;
@@ -448,6 +504,7 @@ export interface SwiperOptions {
     coverflowEffect?: CoverflowEffectOptions;
     flipEffect?: FlipEffectOptions;
     cubeEffect?: CubeEffectOptions;
+    thumbs?: ThumbsOptions;
     zoom?: ZoomOptions | boolean;
     keyboard?: KeyboardOptions | boolean;
     mousewheel?: MousewheelOptions | boolean;
@@ -625,6 +682,21 @@ export interface EventsOptions {
      * Triggered on window resize right before swiper's onresize manipulation
      */
     resize?: () => any;
+
+    /**
+     * Event will be fired if observer is enabled and it detects DOM mutations
+     */
+    observerUpdate?: () => any;
+
+    /**
+     * Event will be fired right before "loop fix"
+     */
+    beforeLoopFix?: () => any;
+
+    /**
+     * Event will be fired after "loop fix"
+     */
+    loopFix?: () => any;
 }
 
 export interface NavigationOptions {
@@ -844,7 +916,7 @@ export interface ScrollbarOptions {
     lockClass?: string;
 
     /**
-     * 	Scrollbar draggable element CSS class
+     *     Scrollbar draggable element CSS class
      *
      * @default 'swiper-scrollbar-drag'
      */
@@ -924,7 +996,7 @@ export interface LazyOptions {
  */
 
 export interface FadeEffectOptions {
-    crossfade?: boolean;
+    crossFade?: boolean;
 }
 
 export interface CoverflowEffectOptions {
@@ -945,6 +1017,14 @@ export interface CubeEffectOptions {
     shadow?: boolean;
     shadowOffset?: number;
     shadowScale?: number;
+}
+
+export interface ThumbsOptions {
+    swiper?: Swiper;
+    slideThumbActiveClass?: string;
+    thumbsContainerClass?: string;
+    multipleActiveThumbs?: boolean;
+    autoScrollOffset?: number;
 }
 
 export interface ZoomOptions {
@@ -971,6 +1051,8 @@ export interface MousewheelOptions {
 export interface VirtualOptions {
     slides?: any[];
     cache?: boolean;
+    addSlidesBefore?: number;
+    addSlidesAfter?: number;
     renderSlide?: (slide: any, index: any) => any;
     renderExternal?: (data: any) => any;
 }
@@ -988,7 +1070,7 @@ export interface HashNavigationOptions {
      * Works in addition to hashnav to replace current url state with the
      * new one instead of adding it to history
      *
-     * @default 	false
+     * @default     false
      */
     replaceState?: boolean;
 }
@@ -1095,8 +1177,6 @@ export interface A11yOptions {
     notificationClass?: string;
 }
 
-// "Multiple imports from './dist/js/swiper.esm' can be combined into one" + "Line breaks are not allowed in import declaration" = ...
-// tslint:disable-next-line:max-line-length
 import {
     Virtual,
     Keyboard,
@@ -1116,7 +1196,7 @@ import {
     EffectCube,
     EffectFlip,
     EffectCoverflow
-} from './dist/js/swiper.esm';
+} from './js/swiper.esm';
 
 /**
  * Core module
@@ -1232,7 +1312,7 @@ export default class Swiper {
     /**
      * Index number of last clicked slide
      */
-    clickedIdex: number;
+    clickedIndex: number;
 
     /**
      * Link to last clicked slide (HTMLElement)
@@ -1435,7 +1515,7 @@ export default class Swiper {
      *
      * @example removeSlide(0); // remove first slide
      * @example removeSlide([0, 1]); // remove first and second slides
-     * @example removeAllSlides();	// Remove all slides
+     * @example removeAllSlides();    // Remove all slides
      */
     removeSlide(slideIndex: number | number[]): void;
 
@@ -1453,6 +1533,11 @@ export default class Swiper {
      * Get current value of swiper wrapper css3 transform translate
      */
     getTranslate(): any;
+
+    /**
+     * Animate custom css3 transform's translate value for swiper wrapper
+     */
+    translateTo(translate: number, speed: number, runCallbacks?: boolean, translateBounds?: boolean): any;
 
     /**
      * Add event listener
@@ -1551,6 +1636,11 @@ export default class Swiper {
      * Swiper CubeEffect module.
      */
     cubeEffect?: EffectCube;
+
+    /**
+     * Swiper Thumbs module.
+     */
+    thumbs?: object;
 
     /**
      * Swiper Zoom module.
