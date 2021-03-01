@@ -1,5 +1,5 @@
 // Type definitions for elasticsearch 5.0
-// Project: https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/index.html
+// Project: https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/16.x/index.html
 // Definitions by: Casper Skydt <https://github.com/CasperSkydt>
 //                 Blake Smith <https://github.com/bfsmith>
 //                 Dave Dunkin <https://github.com/ddunkin>
@@ -9,6 +9,9 @@
 //                 Simon Schick <https://github.com/SimonSchick>
 //                 Paul Brabban <https://github.com/brabster>
 //                 Budi Irawan <https://github.com/deerawan>
+//                 Yonatan Kiron <https://github.com/YonatanKiron>
+//                 Jani Šumak <https://github.com/dasdachs>
+//                 Chris Midgley <https://github.com/midgleyc>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.2
 
@@ -452,6 +455,7 @@ export interface MGetParams extends GenericParams {
     preference?: string;
     realtime?: boolean;
     refresh?: boolean;
+    routing?: string;
     _source?: NameList;
     _sourceExclude?: NameList;
     _sourceInclude?: NameList;
@@ -898,6 +902,7 @@ export interface CatSegmentsParams extends GenericParams {
 
 export interface CatShardsParams extends CatCommonParams {
     index?: NameList;
+    bytes?: CatBytes;
 }
 
 export interface CatSnapshotsParams extends GenericParams {
@@ -1124,6 +1129,7 @@ export interface IndicesCreateParams extends GenericParams {
     timeout?: TimeSpan;
     masterTimeout?: TimeSpan;
     updateAllTypes?: boolean;
+    includeTypeName?: boolean;
     index: string;
 }
 
@@ -1207,6 +1213,7 @@ export interface IndicesGetParams extends GenericParams {
     includeDefaults?: boolean;
     index?: NameList;
     feature?: NameList;
+    includeTypeName?: boolean;
 }
 
 export interface IndicesGetAliasParams extends GenericParams {
@@ -1227,6 +1234,7 @@ export interface IndicesGetFieldMappingParams extends GenericParams {
     index?: NameList;
     type?: NameList;
     fields?: NameList;
+    includeTypeName?: boolean;
 }
 
 export interface IndicesGetMappingParams extends GenericParams {
@@ -1236,6 +1244,7 @@ export interface IndicesGetMappingParams extends GenericParams {
     local?: boolean;
     index?: NameList;
     type?: NameList;
+    includeTypeName?: boolean;
 }
 
 export interface IndicesGetSettingsParams extends GenericParams {
@@ -1255,6 +1264,7 @@ export interface IndicesGetTemplateParams extends GenericParams {
     masterTimeout?: TimeSpan;
     local?: boolean;
     name?: NameList;
+    includeTypeName?: boolean;
 }
 
 export interface IndicesGetUpgradeParams extends GenericParams {
@@ -1282,15 +1292,16 @@ export interface IndicesPutAliasParams extends GenericParams {
 }
 
 export interface IndicesPutMappingParams extends GenericParams {
-    timeout?: TimeSpan;
-    masterTimeout?: TimeSpan;
-    ignoreUnavailable?: boolean;
-    allowNoIndices?: boolean;
-    expandWildcards?: ExpandWildcards;
-    updateAllTypes?: boolean;
-    index: NameList;
-    type: string;
-    body: any;
+  timeout?: TimeSpan;
+  masterTimeout?: TimeSpan;
+  ignoreUnavailable?: boolean;
+  allowNoIndices?: boolean;
+  expandWildcards?: ExpandWildcards;
+  updateAllTypes?: boolean;
+  index: NameList;
+  type: string;
+  includeTypeName?: boolean;
+  body: any;
 }
 
 export interface IndicesPutSettingsParams extends GenericParams {
@@ -1312,6 +1323,7 @@ export interface IndicesPutTemplateParams extends GenericParams {
     flatSettings?: boolean;
     name: string;
     body: any;
+    includeTypeName?: boolean;
 }
 
 export interface IndicesRecoveryParams extends GenericParams {
@@ -1336,6 +1348,7 @@ export interface IndicesRolloverParams extends GenericParams {
     waitForActiveShards?: number | string;
     alias?: string;
     newIndex?: string;
+    includeTypeName?: boolean;
 }
 
 export interface IndicesRolloverResponse {
@@ -1642,6 +1655,7 @@ export namespace errors {
     class ClientClosedRequest extends _Abstract {}
     class Conflict extends _Abstract {}
     class ExpectationFailed extends _Abstract {}
+    class Forbidden extends _Abstract {}
     class GatewayTimeout extends _Abstract {}
     class HTTPToHTTPS extends _Abstract {}
     class HTTPVersionNotSupported extends _Abstract {}

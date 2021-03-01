@@ -1,8 +1,9 @@
-// Type definitions for lusca 1.5
+// Type definitions for lusca 1.7
 // Project: https://github.com/krakenjs/lusca#readme
 // Definitions by: Corbin Crutchley <https://github.com/crutchcorn>
+//                 Naoto Yokoyama <https://github.com/builtinnya>
+//                 Piotr Błażejewicz <https://github.com/peterblazejewicz>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// TypeScript Version: 2.2
 
 import express = require('express');
 
@@ -37,12 +38,30 @@ declare namespace lusca {
         preload?: boolean;
     }
 
-    type csrfOptions = csrfOptionsAngular | csrfOptionsNonAngular;
+    type csrfOptions = csrfOptionsBase & csrfOptionsAngularOrNonAngular & csrfOptionsBlocklistOrAllowlist;
 
-    interface csrfOptionsAngular  {
+    interface csrfOptionsBase {
+        /**
+         * The name of the CSRF token in the model.
+         * @default '_csrf'
+         */
         key?: string;
+        /**
+         * @default '_csrfSecret'
+         */
         secret?: string;
+        /**
+         *  An object with create/validate methods for custom tokens
+         */
         impl?: () => any;
+        /**
+         * The name of the response header containing the CSRF token
+         * @default 'x-csrf-token'
+         */
+        header?: string;
+    }
+
+    interface csrfOptionsAngular {
         cookie?: string | {
             options?: object;
         };
@@ -50,15 +69,26 @@ declare namespace lusca {
     }
 
     interface csrfOptionsNonAngular {
-        key?: string;
-        secret?: string;
-        impl?: () => any;
         cookie?: string | {
             name: string;
             options?: object;
         };
         angular?: false;
     }
+
+    type csrfOptionsAngularOrNonAngular = csrfOptionsAngular | csrfOptionsNonAngular;
+
+    interface csrfOptionsBlocklist {
+        blocklist?: string[];
+        allowlist?: never;
+    }
+
+    interface csrfOptionsAllowlist {
+        blocklist?: never;
+        allowlist?: string[];
+    }
+
+    type csrfOptionsBlocklistOrAllowlist = csrfOptionsBlocklist | csrfOptionsAllowlist;
 
     interface xssProtectionOptions {
         enabled?: boolean;

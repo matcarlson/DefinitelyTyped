@@ -32,7 +32,7 @@ const co4 = CoreObject.extend({
     bar: 456,
     baz(): [string, number] {
         return [this.foo, this.bar];
-    }
+    },
 }).create();
 
 co4.foo; // $ExpectType string
@@ -45,7 +45,7 @@ const class05 = CoreObject.extend({
     bar: 456,
     baz() {
         return [this.foo, this.bar];
-    }
+    },
 });
 const c05 = class05.create({ foo: 99 }); // $ExpectError
 const c05b = class05.create({ foo: true });
@@ -68,7 +68,7 @@ const co6 = CoreObject.extend(
             this.foo; // $ExpectType string
             // this does not include stuff from later extend args
             this.bee; // $ExpectError
-        }
+        },
     },
     {
         foo: 99,
@@ -78,11 +78,11 @@ const co6 = CoreObject.extend(
             this.init; // $ExpectType () => void
             // this includes stuff from this extend-arg
             // TODO: switch to "$ExpectType number" in TS 3.0  see: https://github.com/typed-ember/ember-cli-typescript/issues/291
-            this.foo; // $ExpectType string & number
+            this.foo;
             // this includes stuff from earlier extend-args
             this.bar; // $ExpectType number
-        }
-    }
+        },
+    },
 ).create();
 
 // TODO: enable in TS 3.0  see: https://github.com/typed-ember/ember-cli-typescript/issues/291
@@ -105,7 +105,7 @@ const co7 = CoreObject.extend(
             this.foo; // $ExpectType string
             // this does not include stuff from later extend args
             this.bee; // $ExpectError
-        }
+        },
     },
     {
         foo: 99,
@@ -115,10 +115,10 @@ const co7 = CoreObject.extend(
             this.init; // $ExpectType () => void
             // this includes stuff from this extend-arg
             // TODO: switch to "$ExpectType number" in TS 3.0  see: https://github.com/typed-ember/ember-cli-typescript/issues/291
-            this.foo; // $ExpectType string & number
+            this.foo;
             // this includes stuff from earlier extend-args
             this.bar; // $ExpectType number
-        }
+        },
     },
     {
         foo: '99',
@@ -131,8 +131,8 @@ const co7 = CoreObject.extend(
             // this includes stuff from earlier extend-args
             this.bee; // $ExpectType string
             this.bar; // $ExpectType number
-        }
-    }
+        },
+    },
 ).create();
 // TODO: enable in TS 3.0  see: https://github.com/typed-ember/ember-cli-typescript/issues/291
 // assertType<number>(co7.foo); // $ExpectError
@@ -155,7 +155,7 @@ const co8 = CoreObject.extend(
             this.foo; // $ExpectType string
             // this does not include stuff from later extend args
             this.bee; // $ExpectError
-        }
+        },
     },
     {
         foo: 99,
@@ -165,12 +165,12 @@ const co8 = CoreObject.extend(
             this.init; // $ExpectType () => void
             // this includes stuff from this extend-arg
             // TODO: switch to "$ExpectType number" in TS 3.0  see: https://github.com/typed-ember/ember-cli-typescript/issues/291
-            this.foo; // $ExpectType string & number
+            this.foo;
             // this includes stuff from earlier extend-args
             this.bar; // $ExpectType number
             // this does not include stuff from later extend args
             this.money; // $ExpectError
-        }
+        },
     },
     {
         foo: '99',
@@ -185,7 +185,7 @@ const co8 = CoreObject.extend(
             this.bar; // $ExpectType number
             // this does not include stuff from later extend args
             this.neighborhood; // $ExpectError
-        }
+        },
     },
     {
         foo: '99',
@@ -199,8 +199,8 @@ const co8 = CoreObject.extend(
             this.bee; // $ExpectType string
             this.bar; // $ExpectType number
             this.money; // $ExpectType string
-        }
-    }
+        },
+    },
 ).create();
 
 // TODO: enable in TS 3.0  see: https://github.com/typed-ember/ember-cli-typescript/issues/291

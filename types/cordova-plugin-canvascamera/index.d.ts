@@ -1,4 +1,4 @@
-// Type definitions for CanvasCameraPlugin 1.0
+// Type definitions for non-npm package CanvasCameraPlugin 1.0
 // Project: https://github.com/VirtuoWorks/CanvasCameraPlugin
 // Definitions by: Ricardo Azzi Silva <https://github.com/lordazzi>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
@@ -107,13 +107,11 @@ interface CanvasCameraOptions {
     /**
      * Function, optional, default : null, callback executed before a frame has been drawn. frame contains the canvas element, the image element, the tracking data.
      */
-    // tslint:disable-next-line:prefer-method-signature
     onBeforeDraw?: (frame?: Frame) => void;
 
     /**
      * Function, optional, default : null, callback executed after a frame has been drawn. frame contains the canvas element, the image element, the tracking data.
      */
-    // tslint:disable-next-line:prefer-method-signature
     onAfterDraw?: (frame?: Frame) => void;
 }
 

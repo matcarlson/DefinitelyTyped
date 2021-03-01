@@ -124,6 +124,8 @@ attribute.setSubmitMode(submitModeString); // Works if the string is a const
 attribute.setRequiredLevel(requirementLevel);
 attribute.setRequiredLevel(requirementLevelString); // Works if the string is a const
 
+const isMulitselect = attribute.getAttributeType() === "multiselectoptionset";
+
 /// Demonstrate v8 AutoComplete
 
 let autoCompleteControl = Xrm.Page.getControl<Xrm.Page.AutoLookupControl>("name");
@@ -178,7 +180,7 @@ ctrl.setVisible(true);
 
 // Demonstrate getEntityMetadata
 Xrm.Utility.getEntityMetadata("account", ["telephone1"]).then((metadata) => {
-    console.log(metadata.Attributes["statuscode"].optionSet[0].Label.LocalizedLabels[0].Label);
+    console.log(metadata.Attributes["statuscode"].OptionSet[0].Label.LocalizedLabels[0].Label);
 });
 
 // Demonstrate WebAPI RetrieveMultiple
@@ -197,3 +199,11 @@ Xrm.WebApi.retrieveMultipleRecords("contact", `?fetchXml=<fetch version='1.0' ma
     </fetch>`).then((response) => {
         console.log("Query Returned : " + response.entities.length);
     });
+
+// Demonstrate add/removeTabStateChange
+const contextHandler = (context: Xrm.Page.EventContext) => {
+    context.getEventSource();
+};
+
+Xrm.Page.ui.tabs.get("tabName").addTabStateChange(contextHandler);
+Xrm.Page.ui.tabs.get("tabName").removeTabStateChange(contextHandler);

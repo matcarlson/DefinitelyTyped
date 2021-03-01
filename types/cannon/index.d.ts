@@ -2,6 +2,7 @@
 // Project: https://github.com/clark-stevenson/cannon.d.ts
 // Definitions by: Clark Stevenson <https://github.com/clark-stevenson>
 //                 Grzegorz Rozdzialik <https://github.com/Gelio>
+//                 Vitor Macedo <https://github.com/VitorMac10>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 
@@ -535,6 +536,8 @@ declare module CANNON {
         updateInertiaWorld(force: Vec3): void;
         applyForce(force: Vec3, worldPoint: Vec3): void;
         applyImpulse(impulse: Vec3, worldPoint: Vec3): void;
+        applyLocalForce(force: Vec3, localPoint: Vec3): void;
+        applyLocalImpulse(impulse: Vec3, localPoint: Vec3): void;
         updateMassProperties(): void;
         getVelocityAtWorldPoint(worldPoint: Vec3, result: Vec3): Vec3;
 
@@ -648,6 +651,7 @@ declare module CANNON {
         getVehicleAxisWorld(axisIndex: number, result: Vec3): Vec3;
         updateVehicle(timeStep: number): void;
         updateSuspension(deltaTime: number): void;
+        updateWheelTransform(wheelIndex: number): void;
         removeFromWorld(world: World): void;
         getWheelTransformWorld(wheelIndex: number): Transform;
 
@@ -738,7 +742,7 @@ declare module CANNON {
 
     export class Box extends Shape {
 
-        static calculateIntertia(halfExtents: Vec3, mass: number, target: Vec3): void;
+        static calculateInertia(halfExtents: Vec3, mass: number, target: Vec3): void;
 
         boundingSphereRadius: number;
         collisionResponse: boolean;

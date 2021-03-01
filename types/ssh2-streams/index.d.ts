@@ -1,6 +1,7 @@
 // Type definitions for ssh2-streams v0.1.9
 // Project: https://github.com/mscdex/ssh2-streams
 // Definitions by: Ron Buckton <https://github.com/rbuckton>
+//                 Leo Toneff <https://github.com/bragle>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /// <reference types="node" />
@@ -1070,6 +1071,24 @@ export class SFTPStream extends stream.Transform {
 
     /**
      * (Client-only)
+     * Writes data to a file
+     */
+    writeFile(remotePath: string, data: string | Buffer, options: WriteFileOptions, callback?: (err: any) => void): void;
+
+    /**
+     * (Client-only)
+     * Writes data to a file
+     */
+    writeFile(remotePath: string, data: string | Buffer, encoding: string, callback?: (err: any) => void): void;
+
+    /**
+     * (Client-only)
+     * Writes data to a file
+     */
+    writeFile(remotePath: string, data: string | Buffer, callback?: (err: any) => void): void;
+
+    /**
+     * (Client-only)
      * Returns a new writable stream for `path`.
      */
     createWriteStream(path: string, options?: WriteStreamOptions): stream.Writable;
@@ -1628,6 +1647,11 @@ export interface TransferOptions {
      * Called every time a part of a file was transferred
      */
     step?: (total_transferred: number, chunk: number, total: number) => void;
+
+    /**
+     * Integer or string representing the file mode to set for the uploaded file.
+     */
+    mode?: number | string;
 }
 
 export interface ReadStreamOptions {
@@ -1681,26 +1705,26 @@ export interface Stats extends Attributes {
 }
 
 export namespace utils {
-    export function parseKey(keyData: string | Buffer): ParsedKey | Error;
-    export function genPublicKey(privKeyInfo: ParsedKey): ParsedKey;
-    export function decryptKey(privKeyInfo: ParsedKey, passphrase: string): void;
+    export function parseKey(keyData: string | Buffer, passphrase?: string): ParsedKey | ParsedKey[] | Error | null;
 }
 
 export interface ParsedKey {
-    fulltype: string;
     type: string;
-    extra: string;
     comment: string;
-    encryption: string;
-    private: Buffer;
-    privateOrig: Buffer;
-    public: Buffer;
-    publicOrig: Buffer;
-    ppk?: boolean;
-    privateMAC?: string;
+    getPrivatePEM(): string;
+    getPublicPEM(): string;
+    getPublicSSH(): string;
+    sign(data: string | Buffer): Buffer | Error;
+    verify(data: string | Buffer, signature: Buffer): boolean | Error;
 }
 
 export interface ReadFileOptions {
     encoding?: string;
+    flag?: string;
+}
+
+export interface WriteFileOptions {
+    encoding?: string;
+    mode?: number;
     flag?: string;
 }

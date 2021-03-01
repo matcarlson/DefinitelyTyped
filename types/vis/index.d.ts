@@ -1,5 +1,5 @@
 // Type definitions for vis.js 4.21
-// Project: https://github.com/almende/vis
+// Project: https://github.com/almende/vis, http://visjs.org
 // Definitions by: Michaël Bitard <https://github.com/MichaelBitard>
 //                 MacLeod Broad <https://github.com/macleodbroad-wf>
 //                 Adrian Caballero <https://github.com/adripanico>
@@ -12,6 +12,8 @@
 //                 dcop <https://github.com/dcop>
 //                 Avraham Essoudry <https://github.com/avrahamcool>
 //                 Dmitriy Trifonov <https://github.com/divideby>
+//                 Sam Welek <https://github.com/tiberiushunter>
+//                 Slaven Tomac <https://github.com/slavede>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 import { MomentInput, MomentFormatSpecification, Moment } from 'moment';
@@ -25,11 +27,12 @@ export type MomentConstructor = MomentConstructor1 | MomentConstructor2;
 export type IdType = string | number;
 export type SubgroupType = IdType;
 export type DateType = Date | number | string;
+export type DirectionType = 'from' | 'to';
 export type HeightWidthType = IdType;
 export type TimelineItemType = 'box' | 'point' | 'range' | 'background';
 export type TimelineAlignType = 'auto' | 'center' | 'left' | 'right';
 export type TimelineTimeAxisScaleType = 'millisecond' | 'second' | 'minute' | 'hour' |
-  'weekday' | 'day' | 'month' | 'year';
+  'weekday' | 'day' | 'week' | 'month' | 'year';
 export type TimelineEventPropertiesResultWhatType = 'item' | 'background' | 'axis' |
   'group-label' | 'custom-time' | 'current-time';
 export type TimelineEvents =
@@ -104,8 +107,10 @@ export interface DataGroup {
   style?: string;
   subgroupOrder?: string | (() => void);
   title?: string;
-  nestedGroups?: number[];
+  nestedGroups?: IdType[];
   subgroupStack?: SubGroupStackOptions | boolean;
+  visible?: boolean;
+  showNested?: boolean;
 }
 
 export interface DataGroupOptions {
@@ -193,8 +198,8 @@ export interface TimelineRollingModeOption {
 }
 
 export interface TimelineTooltipOption {
-  followMouse: boolean;
-  overflowMethod: 'cap' | 'flip';
+  followMouse?: boolean;
+  overflowMethod?: 'cap' | 'flip';
 }
 
 export type TimelineOptionsConfigureFunction = (option: string, path: string[]) => boolean;
@@ -232,7 +237,7 @@ export interface TimelineOptions {
   horizontalScroll?: boolean;
   itemsAlwaysDraggable?: TimelineOptionsItemsAlwaysDraggableType;
   locale?: string;
-  locales?: any; // TODO
+  locales?: Locales;
   moment?: MomentConstructor;
   margin?: TimelineOptionsMarginType;
   max?: DateType;
@@ -459,7 +464,7 @@ export class DataSet<T extends DataItem | DataGroup | Node | Edge> {
    * @returns When no item is found, null is returned when a single item was requested,
    * and and empty Array is returned in case of multiple id's.
    */
-  get(id: IdType, options?: DataSelectionOptions<T>): T;
+  get(id: IdType, options?: DataSelectionOptions<T>): T | null;
 
   /**
    * Get multiple items from the DataSet.
@@ -494,7 +499,7 @@ export class DataSet<T extends DataItem | DataGroup | Node | Edge> {
    * @param [options] Optional options.
    * @returns The mapped items.
    */
-  map(callback: (item: T, id: IdType) => any, options?: DataSelectionOptions<T>): any[];
+  map<M>(callback: (item: T, id: IdType) => M, options?: DataSelectionOptions<T>): M[];
 
   /**
    * Find the item with maximum value of specified field.
@@ -589,7 +594,7 @@ export interface DataSelectionOptions<T> {
   /**
    * Order the items by a field name or custom sort function.
    */
-  order?: string | any;
+  order?: string | ((a: T, b: T) => number);
 
   /**
    * Determine the type of output of the get function.
@@ -597,7 +602,7 @@ export interface DataSelectionOptions<T> {
    * The default returnType is an Array.
    * The Object type will return a JSON object with the ID's as keys.
    */
-  returnType?: string;
+  returnType?: "Array" | "Object";
 }
 
 export class DataView<T extends DataItem | DataGroup> {
@@ -680,7 +685,7 @@ export interface Graph2dOptions {
   hiddenDates?: any; // TODO
   legend?: Graph2dLegendOption;
   locale?: string;
-  locales?: any; // TODO
+  locales?: Locales;
   moment?: MomentConstructor;
   max?: DateType;
   maxHeight?: HeightWidthType;
@@ -774,8 +779,10 @@ export class Timeline {
   );
 
   /**
-   * Add new vertical bar representing a custom time that can be dragged by the user. Parameter time can be a Date, Number, or String, and is new Date() by default.
-   * Parameter id can be Number or String and is undefined by default. The id is added as CSS class name of the custom time bar, allowing to style multiple time bars differently.
+   * Add new vertical bar representing a custom time that can be dragged by the user.
+   * Parameter time can be a Date, Number, or String, and is new Date() by default.
+   * Parameter id can be Number or String and is undefined by default.
+   * The id is added as CSS class name of the custom time bar, allowing to style multiple time bars differently.
    * The method returns id of the created bar.
    */
   addCustomTime(time: DateType, id?: IdType): IdType;
@@ -856,7 +863,8 @@ export class Timeline {
   removeCustomTime(id: IdType): void;
 
   /**
-   * Set a current time. This can be used for example to ensure that a client's time is synchronized with a shared server time. Only applicable when option showCurrentTime is true.
+   * Set a current time. This can be used for example to ensure that a client's time is synchronized with a shared server time.
+   * Only applicable when option showCurrentTime is true.
    */
   setCurrentTime(time: DateType): void;
 
@@ -892,12 +900,14 @@ export class Timeline {
   setItems(items: DataItemCollectionType): void;
 
   /**
-   * Set or update options. It is possible to change any option of the timeline at any time. You can for example switch orientation on the fly.
+   * Set or update options. It is possible to change any option of the timeline at any time.
+   * You can for example switch orientation on the fly.
    */
   setOptions(options: TimelineOptions): void;
 
   /**
-   * Select one or multiple items by their id. The currently selected items will be unselected. To unselect all selected items, call `setSelection([])`.
+   * Select one or multiple items by their id. The currently selected items will be unselected.
+   * To unselect all selected items, call `setSelection([])`.
    */
   setSelection(ids: IdType | IdType[], options?: { focus: boolean, animation: TimelineAnimationOptions }): void;
 
@@ -1005,6 +1015,8 @@ export type NetworkEvents =
   'dragStart' |
   'dragging' |
   'dragEnd' |
+  'controlNodeDragging' |
+  'controlNodeDragEnd' |
   'hoverNode' |
   'blurNode' |
   'hoverEdge' |
@@ -1040,7 +1052,7 @@ export class Network {
   constructor(container: HTMLElement, data: Data, options?: Options);
 
   /**
-   * 	Remove the network from the DOM and remove all Hammer bindings and references.
+   *     Remove the network from the DOM and remove all Hammer bindings and references.
    */
   destroy(): void;
 
@@ -1132,7 +1144,7 @@ export class Network {
   cluster(options?: ClusterOptions): void;
 
   /**
-   * 	This method looks at the provided node and makes a cluster of it and all it's connected nodes.
+   *     This method looks at the provided node and makes a cluster of it and all it's connected nodes.
    * The behaviour can be customized by proving the options object.
    * All options of this object are explained below.
    * The joinCondition is only presented with the connected nodes.
@@ -1196,6 +1208,16 @@ export class Network {
   getBaseEdge(clusteredEdgeId: IdType): IdType;
 
   /**
+   * For the given clusteredEdgeId, this method will return all the original
+   * base edge id's provided in data.edges.
+   * For a non-clustered (i.e. 'base') edge, clusteredEdgeId is returned.
+   * Only the base edge id's are returned.
+   * All clustered edges id's under clusteredEdgeId are skipped,
+   * but scanned recursively to return their base id's.
+   */
+  getBaseEdges(clusteredEdgeId: IdType): IdType[];
+
+  /**
    * Visible edges between clustered nodes are not the same edge as the ones provided
    * in data.edges passed on network creation. With each layer of clustering, copies of
    * the edges between clusters are created and the previous edges are hidden,
@@ -1247,7 +1269,7 @@ export class Network {
   getSeed(): number;
 
   /**
-   * 	Programatically enable the edit mode.
+   *     Programatically enable the edit mode.
    * Similar effect to pressing the edit button.
    */
   enableEditMode(): void;
@@ -1259,7 +1281,7 @@ export class Network {
   disableEditMode(): void;
 
   /**
-   * 	Go into addNode mode. Having edit mode or manipulation enabled is not required.
+   *     Go into addNode mode. Having edit mode or manipulation enabled is not required.
    * To get out of this mode, call disableEditMode().
    * The callback functions defined in handlerFunctions still apply.
    * To use these methods without having the manipulation GUI, make sure you set enabled to false.
@@ -1301,7 +1323,7 @@ export class Network {
   getPositions(nodeId: IdType): Position;
 
   /**
-   * 	When using the vis.DataSet to load your nodes into the network,
+   *     When using the vis.DataSet to load your nodes into the network,
    * this method will put the X and Y positions of all nodes into that dataset.
    * If you're loading your nodes from a database and have this dynamically coupled with the DataSet,
    * you can use this to stablize your network once, then save the positions in that database
@@ -1339,7 +1361,7 @@ export class Network {
    *
    * @param nodeOrEdgeId a node or edge id
    */
-  getConnectedNodes(nodeOrEdgeId: IdType): IdType[] | Array<{ fromId: IdType, toId: IdType }>;
+  getConnectedNodes(nodeOrEdgeId: IdType, direction?: DirectionType): IdType[] | Array<{ fromId: IdType, toId: IdType }>;
 
   /**
    * Returns an array of edgeIds of the edges connected to this node.
@@ -1741,7 +1763,7 @@ export interface Options {
 
   clickToUse?: boolean;
 
-  configure?: any; // http://visjs.org/docs/network/configure.html#
+  configure?: NetworkConfigure;
 
   edges?: EdgeOptions;
 
@@ -1761,6 +1783,13 @@ export interface Options {
 export interface Image {
   unselected?: string;
   selected?: string;
+}
+
+export interface NetworkConfigure {
+  enabled?: boolean;
+  filter?: string | string[] | boolean; // please note, filter could be also a function. This case is not represented here
+  container?: any;
+  showButton?: boolean;
 }
 
 export interface Color {
@@ -1793,21 +1822,7 @@ export interface NodeOptions {
     y?: boolean,
   };
 
-  font?: string | {
-    color?: string,
-    size?: number, // px
-    face?: string,
-    background?: string,
-    strokeWidth?: number, // px
-    strokeColor?: string,
-    align?: string,
-    vadjust?: string,
-    multi?: string,
-    bold?: string | FontOptions,
-    ital?: string | FontOptions,
-    boldital?: string | FontOptions,
-    mono?: string | FontOptions,
-  };
+  font?: string | Font;
 
   group?: string;
 
@@ -1828,6 +1843,13 @@ export interface NodeOptions {
 
   level?: number;
 
+  margin?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
+
   mass?: number;
 
   physics?: boolean;
@@ -1839,11 +1861,11 @@ export interface NodeOptions {
   shape?: string;
 
   shapeProperties?: {
-    borderDashes: boolean | number[], // only for borders
-    borderRadius: number,     // only for box shape
-    interpolation: boolean,  // only for image and circularImage shapes
-    useImageSize: boolean,  // only for image and circularImage shapes
-    useBorderWithImage: boolean  // only for image shape
+    borderDashes?: boolean | number[], // only for borders
+    borderRadius?: number,     // only for box shape
+    interpolation?: boolean,  // only for image and circularImage shapes
+    useImageSize?: boolean,  // only for image and circularImage shapes
+    useBorderWithImage?: boolean  // only for image shape
   };
 
   size?: number;
@@ -1852,6 +1874,13 @@ export interface NodeOptions {
 
   value?: number;
 
+  /**
+   * If false, no widthConstraint is applied. If a number is specified, the minimum and maximum widths of the node are set to the value.
+   * The node's label's lines will be broken on spaces to stay below the maximum and the node's width
+   * will be set to the minimum if less than the value.
+   */
+  widthConstraint?: number | boolean | { minimum?: number, maximum?: number };
+
   x?: number;
 
   y?: number;
@@ -1859,21 +1888,22 @@ export interface NodeOptions {
 
 export interface EdgeOptions {
   arrows?: string | {
-    to?: boolean | {
-      enabled?: boolean,
-      scaleFactor?: number,
-    },
-    middle?: boolean | {
-      enabled?: boolean,
-      scaleFactor?: number,
-    },
-    from?: boolean | {
-      enabled?: boolean,
-      scaleFactor?: number,
-    }
+    to?: boolean | ArrowHead
+    middle?: boolean | ArrowHead
+    from?: boolean | ArrowHead
+  };
+
+  endPointOffset?: {
+    from?: number,
+    to?: number
   };
 
   arrowStrikethrough?: boolean;
+
+  chosen?: boolean | {
+    edge?: boolean, // please note, chosen.edge could be also a function. This case is not represented here
+    label?: boolean, // please note, chosen.label could be also a function. This case is not represented here
+  };
 
   color?: string | {
     color?: string,
@@ -1885,21 +1915,7 @@ export interface EdgeOptions {
 
   dashes?: boolean | number[];
 
-  font?: string | {
-    color?: string,
-    size?: number, // px
-    face?: string,
-    background?: string,
-    strokeWidth?: number, // px
-    strokeColor?: string,
-    align?: string,
-    vadjust?: string,
-    multi?: string,
-    bold?: string | FontOptions,
-    ital?: string | FontOptions,
-    boldital?: string | FontOptions,
-    mono?: string | FontOptions,
-  };
+  font?: string | Font;
 
   hidden?: boolean;
 
@@ -1919,6 +1935,12 @@ export interface EdgeOptions {
 
   selfReferenceSize?: number;
 
+  selfReference?: {
+    size?: number,
+    angle?: number,
+    renderBehindTheNode?: boolean
+  };
+
   shadow?: boolean | OptionsShadow;
 
   smooth?: boolean | {
@@ -1933,14 +1955,43 @@ export interface EdgeOptions {
   value?: number;
 
   width?: number;
+
+  widthConstraint?: number | boolean | {
+    maximum?: number;
+  };
 }
 
-export interface FontOptions {
+export interface ArrowHead {
+  enabled?: boolean;
+  imageHeight?: number;
+  imageWidth?: number;
+  scaleFactor?: number;
+  src?: string;
+  type?: string;
+}
+
+export interface Font {
+  color?: string;
+  size?: number; // px
+  face?: string;
+  background?: string;
+  strokeWidth?: number; // px
+  strokeColor?: string;
+  align?: string;
+  vadjust?: number;
+  multi?: boolean | string;
+  bold?: string | FontStyles;
+  ital?: string | FontStyles;
+  boldital?: string | FontStyles;
+  mono?: string | FontStyles;
+}
+
+export interface FontStyles {
   color?: string;
   size?: number;
   face?: string;
   mod?: string;
-  vadjust?: string;
+  vadjust?: number;
 }
 
 export interface OptionsScaling {
@@ -1957,11 +2008,11 @@ export interface OptionsScaling {
 }
 
 export interface OptionsShadow {
-  enabled: boolean;
-  color: string;
-  size: number;
-  x: number;
-  y: number;
+  enabled?: boolean;
+  color?: string;
+  size?: number;
+  x?: number;
+  y?: number;
 }
 
 export as namespace vis;

@@ -13,7 +13,7 @@ mermaid.initialize(config);
 // mermaidAPI usage
 
 const { mermaidAPI } = mermaid;
-mermaidAPI.initalize({});
+mermaidAPI.initialize({});
 
 const element = document.querySelector("#graphDiv")!;
 
@@ -25,4 +25,6 @@ const insertSvg = (
 };
 
 const graphDefinition = "graph TB\na-->b";
-const graph = mermaidAPI.render("graphDiv", graphDefinition, insertSvg);
+let graph: string;
+graph = mermaidAPI.render("graphDiv", graphDefinition, insertSvg);
+graph = mermaidAPI.render("graphDiv", graphDefinition);

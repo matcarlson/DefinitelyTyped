@@ -1,4 +1,4 @@
-import { PureComponent, Validator, Requireable } from "react";
+import { PureComponent, Validator, Requireable } from 'react';
 
 export type SizedColumnProps = {
     adjustedWidth: number;
@@ -47,3 +47,5 @@ export class ColumnSizer extends PureComponent<ColumnSizerProps> {
         width: Validator<number>;
     };
 }
+
+export default ColumnSizer;

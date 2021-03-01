@@ -4,28 +4,44 @@
 //                 Eric Naeseth <https://github.com/enaeseth>
 //                 Igor Belagorudsky <https://github.com/theigor>
 //                 Tomek Łaziuk <https://github.com/tlaziuk>
-//                 Daniel Perez Alvarez <https://github.com/danielpa9708>
+//                 Daniel Perez Alvarez <https://github.com/unindented>
 //                 Kevin Stiehl <https://github.com/kstiehl>
+//                 Oleg Vaskevich <https://github.com/vaskevich>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.3
 
+import { IncomingMessage } from 'http';
+
 declare global {
     namespace Express {
+        // tslint:disable-next-line:no-empty-interface
+        interface AuthInfo {}
+        // tslint:disable-next-line:no-empty-interface
+        interface User {}
+
         interface Request {
-            authInfo?: any;
-            user?: any;
+            authInfo?: AuthInfo;
+            user?: User;
 
             // These declarations are merged into express's Request type
-            login(user: any, done: (err: any) => void): void;
-            login(user: any, options: any, done: (err: any) => void): void;
-            logIn(user: any, done: (err: any) => void): void;
-            logIn(user: any, options: any, done: (err: any) => void): void;
+            login(user: User, done: (err: any) => void): void;
+            login(user: User, options: any, done: (err: any) => void): void;
+            logIn(user: User, done: (err: any) => void): void;
+            logIn(user: User, options: any, done: (err: any) => void): void;
 
             logout(): void;
             logOut(): void;
 
-            isAuthenticated(): boolean;
-            isUnauthenticated(): boolean;
+            isAuthenticated(): this is AuthenticatedRequest;
+            isUnauthenticated(): this is UnauthenticatedRequest;
+        }
+
+        interface AuthenticatedRequest extends Request {
+            user: User;
+        }
+
+        interface UnauthenticatedRequest extends Request {
+            user?: undefined;
         }
     }
 }
@@ -61,12 +77,14 @@ declare namespace passport {
         initialize(options?: { userProperty: string; }): InitializeRet;
         session(options?: { pauseStream: boolean; }): AuthenticateRet;
 
-        authenticate(strategy: string | string[], callback?: (...args: any[]) => any): AuthenticateRet;
-        authenticate(strategy: string | string[], options: AuthenticateOptions, callback?: (...args: any[]) => any): AuthenticateRet;
+        authenticate(strategy: string | string[] | Strategy, callback?: (...args: any[]) => any): AuthenticateRet;
+        authenticate(strategy: string | string[] | Strategy, options: AuthenticateOptions, callback?: (...args: any[]) => any): AuthenticateRet;
         authorize(strategy: string | string[], callback?: (...args: any[]) => any): AuthorizeRet;
         authorize(strategy: string | string[], options: AuthorizeOptions, callback?: (...args: any[]) => any): AuthorizeRet;
-        serializeUser<TUser, TID>(fn: (user: TUser, done: (err: any, id?: TID) => void) => void): void;
-        deserializeUser<TUser, TID>(fn: (id: TID, done: (err: any, user?: TUser) => void) => void): void;
+        serializeUser<TID>(fn: (user: Express.User, done: (err: any, id?: TID) => void) => void): void;
+        serializeUser<TID, TR extends IncomingMessage = express.Request>(fn: (req: TR, user: Express.User, done: (err: any, id?: TID) => void) => void): void;
+        deserializeUser<TID>(fn: (id: TID, done: (err: any, user?: Express.User | false | null) => void) => void): void;
+        deserializeUser<TID, TR extends IncomingMessage = express.Request>(fn: (req: TR, id: TID, done: (err: any, user?: Express.User | false | null) => void) => void): void;
         transformAuthInfo(fn: (info: any, done: (err: any, info: any) => void) => void): void;
     }
 
@@ -92,7 +110,7 @@ declare namespace passport {
          * useful for third-party authentication strategies to pass profile
          * details.
          */
-        success(user: object, info?: object): void;
+        success(user: Express.User, info?: object): void;
         /**
          * Fail authentication, with optional `challenge` and `status`, defaulting
          * to 401.
