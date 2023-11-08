@@ -1,4 +1,4 @@
-// For Library Version: 1.119.0
+// For Library Version: 1.120.0
 
 declare module "sap/f/library" {
   export interface IShellBar {
@@ -630,6 +630,20 @@ declare module "sap/m/library" {
      */
     Simple = "Simple",
   }
+  /**
+   * An object type that represents sap.m.upload.FilterPanel fields properties.
+   */
+  export type FilterPanelField = {
+    /**
+     * field name.
+     */
+    label: string;
+    /**
+     * model path.
+     */
+    path: string;
+  };
+
   /**
    * Available options for the layout of container lines along the cross axis of the flexbox layout.
    */
@@ -1653,12 +1667,12 @@ declare module "sap/m/library" {
    */
   export enum MenuButtonMode {
     /**
-     * Default regular type (Menu button appears as a regular button, pressing opens a menu)
+     * Default Regular type - MenuButton appears as a regular button, pressing it opens a menu.
      */
     Regular = "Regular",
     /**
-     * Split type (Menu button appears as a split button, pressing fires the default action a menu, pressing
-     * the arrow part opens a menu)
+     * Split type - MenuButton appears as a split button separated into two areas: the text and the arrow button.
+     * Pressing the text area fires the default (or last) action, pressing the arrow part opens a menu.
      */
     Split = "Split",
   }
@@ -3067,6 +3081,29 @@ declare module "sap/m/library" {
     Standard = "Standard",
   }
   /**
+   * @since 1.120
+   *
+   * Defines the placeholder type for the control to be replaced.
+   */
+  export enum UploadSetwithTableActionPlaceHolder {
+    /**
+     * Placeholder for cloud file picker button.
+     */
+    CloudFilePickerButtonPlaceholder = "CloudFilePickerButtonPlaceholder",
+    /**
+     * Placeholder for personalization settings button.
+     */
+    PersonalizationSettingsPlaceholder = "PersonalizationSettingsPlaceholder",
+    /**
+     * Placeholder for upload button control.
+     */
+    UploadButtonPlaceholder = "UploadButtonPlaceholder",
+    /**
+     * Placeholder for variant management.
+     */
+    VariantManagementPlaceholder = "VariantManagementPlaceholder",
+  }
+  /**
    * States of the upload process of {@link sap.m.UploadCollectionItem}.
    */
   export enum UploadState {
@@ -3383,8 +3420,15 @@ declare module "sap/m/library" {
      *
      * Interface for P13nPopup which are suitable as content for the `sap.m.p13n.Popup`. Implementation of this
      * interface should include the following methods:
+     *
+     *
      * 	 - `getTitle`
+     *
+     * Implementation of this interface can optionally provide the following methods:
+     *
+     *
      * 	 - `getVerticalScrolling`
+     * 	 - `onReset`
      */
     interface IContent {
       __implements__sap_m_p13n_IContent: boolean;
@@ -3402,6 +3446,11 @@ declare module "sap/m/library" {
        * @returns The enablement of the vertical scrolling enablement for the `sap.m.p13n.Popup`.
        */
       getVerticalScrolling?(): boolean;
+      /**
+       * Optional hook that will be executed when the panel is used by a `sap.m.p13n.Popup` that may trigger a
+       * reset on the panel
+       */
+      onReset?(): void;
     }
   }
 
@@ -5572,6 +5621,20 @@ declare module "sap/m/Avatar" {
       mParameters?: object
     ): this;
     /**
+     * @since 1.120.0
+     *
+     * Gets current value of property {@link #getActive active}.
+     *
+     * Determines whether the `Avatar` is active/toggled (default is set to `false`). Active state is meant
+     * to be toggled when user clicks on the `Avatar`. The Active state is only applied, when the `Avatar` has
+     * `press` listeners.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `active`
+     */
+    getActive(): boolean;
+    /**
      * Returns array of IDs of the elements which are the current targets of the association {@link #getAriaDescribedBy ariaDescribedBy}.
      */
     getAriaDescribedBy(): ID[];
@@ -5815,6 +5878,27 @@ declare module "sap/m/Avatar" {
        */
       vAriaLabelledBy: int | ID | Control
     ): ID | null;
+    /**
+     * @since 1.120.0
+     *
+     * Sets a new value for property {@link #getActive active}.
+     *
+     * Determines whether the `Avatar` is active/toggled (default is set to `false`). Active state is meant
+     * to be toggled when user clicks on the `Avatar`. The Active state is only applied, when the `Avatar` has
+     * `press` listeners.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setActive(
+      /**
+       * New value for property `active`
+       */
+      bActive?: boolean
+    ): this;
     /**
      * @since 1.99.0
      *
@@ -6278,6 +6362,15 @@ declare module "sap/m/Avatar" {
      * colors depending on the {@link sap.m.AvatarColor AvatarColor}.
      */
     enabled?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * @since 1.120.0
+     *
+     * Determines whether the `Avatar` is active/toggled (default is set to `false`). Active state is meant
+     * to be toggled when user clicks on the `Avatar`. The Active state is only applied, when the `Avatar` has
+     * `press` listeners.
+     */
+    active?: boolean | PropertyBindingInfo | `{${string}}`;
 
     /**
      * A `sap.m.LightBox` instance, that will be opened automatically when the user interacts with the `Avatar`
@@ -15144,7 +15237,8 @@ declare module "sap/m/ComboBoxBase" {
      *
      * Sets a custom filter function for items. The function accepts two parameters: - currenly typed value
      * in the input field - item to be matched The function should return a Boolean value (true or false) which
-     * represents whether an item will be shown in the dropdown or not.
+     * represents whether an item will be shown in the dropdown or not. If no callback is provided, the control
+     * fallbacks to default filtering.
      *
      * @returns `this` to allow method chaining.
      */
@@ -15152,11 +15246,7 @@ declare module "sap/m/ComboBoxBase" {
       /**
        * A callback function called when typing in a ComboBoxBase control or ancestor.
        */
-      fnFilter: (
-        p1: string,
-        p2: Item,
-        p3: boolean
-      ) => boolean | undefined | Function
+      fnFilter?: (p1: string, p2: Item) => boolean
     ): this;
     /**
      * @deprecated (since 1.110)
@@ -29616,6 +29706,8 @@ declare module "sap/m/GenericTile" {
 
   import Button from "sap/m/Button";
 
+  import LinkTileContent from "sap/m/LinkTileContent";
+
   import TileContent from "sap/m/TileContent";
 
   import {
@@ -29721,6 +29813,19 @@ declare module "sap/m/GenericTile" {
       oActionButton: Button
     ): this;
     /**
+     * @since 1.120
+     *
+     * Adds some linkTileContent to the aggregation {@link #getLinkTileContents linkTileContents}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    addLinkTileContent(
+      /**
+       * The linkTileContent to add; if empty, nothing is inserted
+       */
+      oLinkTileContent: LinkTileContent
+    ): this;
+    /**
      * Adds some tileContent to the aggregation {@link #getTileContent tileContent}.
      *
      * @returns Reference to `this` in order to allow method chaining
@@ -29823,6 +29928,14 @@ declare module "sap/m/GenericTile" {
      * @returns Reference to `this` in order to allow method chaining
      */
     destroyIcon(): this;
+    /**
+     * @since 1.120
+     *
+     * Destroys all the linkTileContents in the aggregation {@link #getLinkTileContents linkTileContents}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    destroyLinkTileContents(): this;
     /**
      * Destroys all the tileContent in the aggregation {@link #getTileContent tileContent}.
      *
@@ -30043,6 +30156,14 @@ declare module "sap/m/GenericTile" {
      */
     getImageDescription(): string;
     /**
+     * @since 1.120
+     *
+     * Gets content of aggregation {@link #getLinkTileContents linkTileContents}.
+     *
+     * LinkTileContent is being added to the GenericTile, it is advised to use in TwoByOne frameType
+     */
+    getLinkTileContents(): LinkTileContent[];
+    /**
      * Gets current value of property {@link #getMode mode}.
      *
      * The mode of the GenericTile.
@@ -30245,6 +30366,20 @@ declare module "sap/m/GenericTile" {
       oActionButton: Button
     ): int;
     /**
+     * @since 1.120
+     *
+     * Checks for the provided `sap.m.LinkTileContent` in the aggregation {@link #getLinkTileContents linkTileContents}.
+     * and returns its index if found or -1 otherwise.
+     *
+     * @returns The index of the provided control in the aggregation if found, or -1 otherwise
+     */
+    indexOfLinkTileContent(
+      /**
+       * The linkTileContent whose index is looked for
+       */
+      oLinkTileContent: LinkTileContent
+    ): int;
+    /**
      * Checks for the provided `sap.m.TileContent` in the aggregation {@link #getTileContent tileContent}. and
      * returns its index if found or -1 otherwise.
      *
@@ -30272,6 +30407,25 @@ declare module "sap/m/GenericTile" {
        * The `0`-based index the actionButton should be inserted at; for a negative value of `iIndex`, the actionButton
        * is inserted at position 0; for a value greater than the current size of the aggregation, the actionButton
        * is inserted at the last position
+       */
+      iIndex: int
+    ): this;
+    /**
+     * @since 1.120
+     *
+     * Inserts a linkTileContent into the aggregation {@link #getLinkTileContents linkTileContents}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    insertLinkTileContent(
+      /**
+       * The linkTileContent to insert; if empty, nothing is inserted
+       */
+      oLinkTileContent: LinkTileContent,
+      /**
+       * The `0`-based index the linkTileContent should be inserted at; for a negative value of `iIndex`, the
+       * linkTileContent is inserted at position 0; for a value greater than the current size of the aggregation,
+       * the linkTileContent is inserted at the last position
        */
       iIndex: int
     ): this;
@@ -30316,6 +30470,16 @@ declare module "sap/m/GenericTile" {
      */
     removeAllActionButtons(): Button[];
     /**
+     * @since 1.120
+     *
+     * Removes all the controls from the aggregation {@link #getLinkTileContents linkTileContents}.
+     *
+     * Additionally, it unregisters them from the hosting UIArea.
+     *
+     * @returns An array of the removed elements (might be empty)
+     */
+    removeAllLinkTileContents(): LinkTileContent[];
+    /**
      * Removes all the controls from the aggregation {@link #getTileContent tileContent}.
      *
      * Additionally, it unregisters them from the hosting UIArea.
@@ -30323,6 +30487,19 @@ declare module "sap/m/GenericTile" {
      * @returns An array of the removed elements (might be empty)
      */
     removeAllTileContent(): TileContent[];
+    /**
+     * @since 1.120
+     *
+     * Removes a linkTileContent from the aggregation {@link #getLinkTileContents linkTileContents}.
+     *
+     * @returns The removed linkTileContent or `null`
+     */
+    removeLinkTileContent(
+      /**
+       * The linkTileContent to remove or its index or id
+       */
+      vLinkTileContent: int | string | LinkTileContent
+    ): LinkTileContent | null;
     /**
      * Removes a tileContent from the aggregation {@link #getTileContent tileContent}.
      *
@@ -31168,6 +31345,17 @@ declare module "sap/m/GenericTile" {
     tileContent?:
       | TileContent[]
       | TileContent
+      | AggregationBindingInfo
+      | `{${string}}`;
+
+    /**
+     * @since 1.120
+     *
+     * LinkTileContent is being added to the GenericTile, it is advised to use in TwoByOne frameType
+     */
+    linkTileContents?:
+      | LinkTileContent[]
+      | LinkTileContent
       | AggregationBindingInfo
       | `{${string}}`;
 
@@ -39217,10 +39405,6 @@ declare module "sap/m/Input" {
       oTarget: HTMLElement | undefined
     ): boolean;
     /**
-     * Overwrites the onBeforeRendering.
-     */
-    onBeforeRendering(): void;
-    /**
      * @since 1.73
      *
      * Event handler for browsers' `change` event.
@@ -40461,7 +40645,7 @@ declare module "sap/m/InputBase" {
      *
      * Indicates whether the input field is in the rendering phase.
      */
-    bRenderingPhase: undefined;
+    bRenderingPhase: boolean;
 
     /**
      * @ui5-protected DO NOT USE IN APPLICATIONS (only for related classes in the framework)
@@ -40472,7 +40656,7 @@ declare module "sap/m/InputBase" {
      * See:
      * 	sap.m.InputBase#oninput
      */
-    bShowLabelAsPlaceholder: undefined;
+    bShowLabelAsPlaceholder: boolean;
 
     /**
      * Creates a new subclass of class sap.m.InputBase with name `sClassName` and enriches it with the information
@@ -44568,6 +44752,318 @@ declare module "sap/m/Link" {
   export type Link$PressEvent = Event<Link$PressEventParameters, Link>;
 }
 
+declare module "sap/m/LinkTileContent" {
+  import { default as UI5Element, $ElementSettings } from "sap/ui/core/Element";
+
+  import { URI } from "sap/ui/core/library";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import { PropertyBindingInfo } from "sap/ui/base/ManagedObject";
+
+  import Event from "sap/ui/base/Event";
+
+  /**
+   * @since 1.120
+   *
+   * This element is used within the GenericTile control that generates a combination of an icon and a linkl
+   */
+  export default class LinkTileContent extends UI5Element {
+    /**
+     * Constructor for a new LinkTileContent.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $LinkTileContentSettings
+    );
+    /**
+     * Constructor for a new LinkTileContent.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * ID for the new control, it is generated automatically if an ID is not provided.
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $LinkTileContentSettings
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.LinkTileContent with name `sClassName` and enriches it with the
+     * information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.ui.core.Element.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, LinkTileContent>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.LinkTileContent.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:linkPress linkPress} event of this `sap.m.LinkTileContent`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.LinkTileContent` itself.
+     *
+     * Event is fired when the user triggers the link control.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachLinkPress(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: LinkTileContent$LinkPressEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.LinkTileContent` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:linkPress linkPress} event of this `sap.m.LinkTileContent`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.LinkTileContent` itself.
+     *
+     * Event is fired when the user triggers the link control.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachLinkPress(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: LinkTileContent$LinkPressEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.LinkTileContent` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:linkPress linkPress} event of this `sap.m.LinkTileContent`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachLinkPress(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: LinkTileContent$LinkPressEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:linkPress linkPress} to attached listeners.
+     *
+     * Listeners may prevent the default action of this event by calling the `preventDefault` method on the
+     * event object. The return value of this method indicates whether the default action should be executed.
+     *
+     * @returns Whether or not to prevent the default action
+     */
+    fireLinkPress(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: LinkTileContent$LinkPressEventParameters
+    ): boolean;
+    /**
+     * Gets current value of property {@link #getIconSrc iconSrc}.
+     *
+     * This property can be set by following options:
+     *
+     * **Option 1:**
+     *  The value has to be matched by following pattern `sap-icon://collection-name/icon-name` where `collection-name`
+     * and `icon-name` have to be replaced by the desired values. In case the default UI5 icons are used the
+     * `collection-name` can be omited.
+     *  Example: `sap-icon://accept`
+     *
+     * **Option 2:** The value is determined by using {@link sap.ui.core.IconPool.getIconURI} with an Icon name
+     * parameter and an optional collection parameter which is required when using application extended Icons.
+     *  Example: `IconPool.getIconURI("accept")`
+     *
+     * @returns Value of property `iconSrc`
+     */
+    getIconSrc(): URI;
+    /**
+     * Gets current value of property {@link #getLinkHref linkHref}.
+     *
+     * Defines the link target URI. Supports standard hyperlink behavior. **Note:** Don't set `href` property
+     * if an action should be triggered by the link. Instead set `accessibleRole` property to `LinkAccessibleRole.Button`
+     * and register a `press` event handler.
+     *
+     * @returns Value of property `linkHref`
+     */
+    getLinkHref(): URI;
+    /**
+     * Gets current value of property {@link #getLinkText linkText}.
+     *
+     * Defines the displayed link text.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `linkText`
+     */
+    getLinkText(): string;
+    /**
+     * Returns the current element instance
+     */
+    getLinkTileContentInstance(): Record<string, LinkTileContent>;
+    /**
+     * Sets a new value for property {@link #getIconSrc iconSrc}.
+     *
+     * This property can be set by following options:
+     *
+     * **Option 1:**
+     *  The value has to be matched by following pattern `sap-icon://collection-name/icon-name` where `collection-name`
+     * and `icon-name` have to be replaced by the desired values. In case the default UI5 icons are used the
+     * `collection-name` can be omited.
+     *  Example: `sap-icon://accept`
+     *
+     * **Option 2:** The value is determined by using {@link sap.ui.core.IconPool.getIconURI} with an Icon name
+     * parameter and an optional collection parameter which is required when using application extended Icons.
+     *  Example: `IconPool.getIconURI("accept")`
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setIconSrc(
+      /**
+       * New value for property `iconSrc`
+       */
+      sIconSrc?: URI
+    ): this;
+    /**
+     * Sets a new value for property {@link #getLinkHref linkHref}.
+     *
+     * Defines the link target URI. Supports standard hyperlink behavior. **Note:** Don't set `href` property
+     * if an action should be triggered by the link. Instead set `accessibleRole` property to `LinkAccessibleRole.Button`
+     * and register a `press` event handler.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setLinkHref(
+      /**
+       * New value for property `linkHref`
+       */
+      sLinkHref?: URI
+    ): this;
+    /**
+     * Sets a new value for property {@link #getLinkText linkText}.
+     *
+     * Defines the displayed link text.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setLinkText(
+      /**
+       * New value for property `linkText`
+       */
+      sLinkText?: string
+    ): this;
+  }
+
+  export interface $LinkTileContentSettings extends $ElementSettings {
+    /**
+     * This property can be set by following options:
+     *
+     * **Option 1:**
+     *  The value has to be matched by following pattern `sap-icon://collection-name/icon-name` where `collection-name`
+     * and `icon-name` have to be replaced by the desired values. In case the default UI5 icons are used the
+     * `collection-name` can be omited.
+     *  Example: `sap-icon://accept`
+     *
+     * **Option 2:** The value is determined by using {@link sap.ui.core.IconPool.getIconURI} with an Icon name
+     * parameter and an optional collection parameter which is required when using application extended Icons.
+     *  Example: `IconPool.getIconURI("accept")`
+     */
+    iconSrc?: URI | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defines the displayed link text.
+     */
+    linkText?: string | PropertyBindingInfo;
+
+    /**
+     * Defines the link target URI. Supports standard hyperlink behavior. **Note:** Don't set `href` property
+     * if an action should be triggered by the link. Instead set `accessibleRole` property to `LinkAccessibleRole.Button`
+     * and register a `press` event handler.
+     */
+    linkHref?: URI | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Event is fired when the user triggers the link control.
+     */
+    linkPress?: (oEvent: LinkTileContent$LinkPressEvent) => void;
+  }
+
+  export interface LinkTileContent$LinkPressEventParameters {
+    /**
+     * Indicates whether the CTRL key was pressed when the link was selected.
+     */
+    ctrlKey?: boolean;
+
+    /**
+     * Indicates whether the "meta" key was pressed when the link was selected.
+     *
+     * On Macintosh keyboards, this is the command key (⌘). On Windows keyboards, this is the windows key (⊞).
+     */
+    metaKey?: boolean;
+  }
+
+  export type LinkTileContent$LinkPressEvent = Event<
+    LinkTileContent$LinkPressEventParameters,
+    LinkTileContent
+  >;
+}
+
 declare module "sap/m/List" {
   import { default as ListBase, $ListBaseSettings } from "sap/m/ListBase";
 
@@ -46046,7 +46542,11 @@ declare module "sap/m/ListBase" {
      * has been performed (e.g. sorting, filtering). **Note:** This feature works only if two-way data binding
      * for the `selected` property of the item is not used. It also needs to be turned off if the binding context
      * of the item does not always point to the same entry in the model, for example, if the order of the data
-     * in the `JSONModel` is changed.
+     * in the `JSONModel` is changed. **Note:** This feature leverages the built-in selection mechanism of the
+     * corresponding binding context when the OData V4 model is used. Therefore, all binding-relevant limitations
+     * apply in this context as well. For more details, see the {@link sap.ui.model.odata.v4.Context#setSelected setSelected},
+     * the {@link sap.ui.model.odata.v4.ODataModel#bindList bindList}, and the {@link sap.ui.model.odata.v4.ODataMetaModel#requestValueListInfo requestValueListInfo }
+     * API documentation. Do not enable this feature when `$$SharedRequests` is active.
      *
      * Default value is `true`.
      *
@@ -46687,7 +47187,11 @@ declare module "sap/m/ListBase" {
      * has been performed (e.g. sorting, filtering). **Note:** This feature works only if two-way data binding
      * for the `selected` property of the item is not used. It also needs to be turned off if the binding context
      * of the item does not always point to the same entry in the model, for example, if the order of the data
-     * in the `JSONModel` is changed.
+     * in the `JSONModel` is changed. **Note:** This feature leverages the built-in selection mechanism of the
+     * corresponding binding context when the OData V4 model is used. Therefore, all binding-relevant limitations
+     * apply in this context as well. For more details, see the {@link sap.ui.model.odata.v4.Context#setSelected setSelected},
+     * the {@link sap.ui.model.odata.v4.ODataModel#bindList bindList}, and the {@link sap.ui.model.odata.v4.ODataMetaModel#requestValueListInfo requestValueListInfo }
+     * API documentation. Do not enable this feature when `$$SharedRequests` is active.
      *
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
@@ -47042,7 +47546,11 @@ declare module "sap/m/ListBase" {
      * has been performed (e.g. sorting, filtering). **Note:** This feature works only if two-way data binding
      * for the `selected` property of the item is not used. It also needs to be turned off if the binding context
      * of the item does not always point to the same entry in the model, for example, if the order of the data
-     * in the `JSONModel` is changed.
+     * in the `JSONModel` is changed. **Note:** This feature leverages the built-in selection mechanism of the
+     * corresponding binding context when the OData V4 model is used. Therefore, all binding-relevant limitations
+     * apply in this context as well. For more details, see the {@link sap.ui.model.odata.v4.Context#setSelected setSelected},
+     * the {@link sap.ui.model.odata.v4.ODataModel#bindList bindList}, and the {@link sap.ui.model.odata.v4.ODataMetaModel#requestValueListInfo requestValueListInfo }
+     * API documentation. Do not enable this feature when `$$SharedRequests` is active.
      */
     rememberSelections?: boolean | PropertyBindingInfo | `{${string}}`;
 
@@ -49398,7 +49906,8 @@ declare module "sap/m/MenuButton" {
      * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
      * otherwise it will be bound to this `sap.m.MenuButton` itself.
      *
-     * Fired before menu opening when the `buttonMode` is set to `Split` and the user presses the arrow button.
+     * In `Regular` button mode – fires when the user presses the button. Alternatively, if the `buttonMode`
+     * is set to `Split` - fires when the user presses the arrow button.
      *
      * @returns Reference to `this` in order to allow method chaining
      */
@@ -49426,7 +49935,8 @@ declare module "sap/m/MenuButton" {
      * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
      * otherwise it will be bound to this `sap.m.MenuButton` itself.
      *
-     * Fired before menu opening when the `buttonMode` is set to `Split` and the user presses the arrow button.
+     * In `Regular` button mode – fires when the user presses the button. Alternatively, if the `buttonMode`
+     * is set to `Split` - fires when the user presses the arrow button.
      *
      * @returns Reference to `this` in order to allow method chaining
      */
@@ -50079,7 +50589,8 @@ declare module "sap/m/MenuButton" {
     /**
      * @since 1.94.0
      *
-     * Fired before menu opening when the `buttonMode` is set to `Split` and the user presses the arrow button.
+     * In `Regular` button mode – fires when the user presses the button. Alternatively, if the `buttonMode`
+     * is set to `Split` - fires when the user presses the arrow button.
      */
     beforeMenuOpen?: (oEvent: Event) => void;
   }
@@ -66387,6 +66898,8 @@ declare module "sap/m/ObjectStatus" {
 
     /**
      * Association to controls / ids which label this control (see WAI-ARIA attribute aria-labelledby).
+     *
+     * **Note:** The additional labelling text will take effect only if `active` property is set to `true`.
      */
     ariaLabelledBy?: Array<Control | string>;
 
@@ -69014,6 +69527,7 @@ declare module "sap/m/P13nColumnsItem" {
 
   /**
    * @since 1.26.0
+   * @deprecated (since 1.120)
    *
    * Type for `columnsItems` aggregation in `P13nColumnsPanel` control.
    */
@@ -71178,6 +71692,7 @@ declare module "sap/m/P13nDimMeasureItem" {
 
   /**
    * @since 1.34.0
+   * @deprecated (since 1.120)
    *
    * Type for `columnsItems` aggregation in `P13nDimMeasurePanel` control.
    */
@@ -71387,6 +71902,7 @@ declare module "sap/m/P13nDimMeasurePanel" {
 
   /**
    * @since 1.34.0
+   * @deprecated (since 1.120)
    *
    * The P13nDimMeasurePanel control is used to define chart-specific settings like chart type, the visibility,
    * the order and roles of dimensions and measures for table personalization.
@@ -72955,6 +73471,7 @@ declare module "sap/m/P13nGroupItem" {
 
   /**
    * @since 1.28.0
+   * @deprecated (since 1.120)
    *
    * Type for `groupItems` aggregation in P13nGroupPanel control.
    */
@@ -74954,6 +75471,7 @@ declare module "sap/m/P13nSortItem" {
 
   /**
    * @since 1.26.0
+   * @deprecated - sind 1.120
    *
    * Type for `sortItems` aggregation in P13nSortPanel control.
    */
@@ -84068,6 +84586,16 @@ declare module "sap/m/plugins/CellSelector" {
      */
     static getMetadata(): ElementMetadata;
     /**
+     * Gets current value of property {@link #getEnabled enabled}.
+     *
+     * Indicates whether this plugin is active or not.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `enabled`
+     */
+    getEnabled(): boolean;
+    /**
      * Gets current value of property {@link #getRangeLimit rangeLimit}.
      *
      * For the {@link sap.ui.table.Table} control, defines the number of row contexts that needs to be retrived
@@ -84086,6 +84614,23 @@ declare module "sap/m/plugins/CellSelector" {
      * @returns Value of property `rangeLimit`
      */
     getRangeLimit(): int;
+    /**
+     * Sets a new value for property {@link #getEnabled enabled}.
+     *
+     * Indicates whether this plugin is active or not.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setEnabled(
+      /**
+       * New value for property `enabled`
+       */
+      bEnabled?: boolean
+    ): this;
     /**
      * Sets a new value for property {@link #getRangeLimit rangeLimit}.
      *
@@ -84128,6 +84673,11 @@ declare module "sap/m/plugins/CellSelector" {
      *     least double the value of the {@link sap.ui.table.Table#getThreshold threshold} property.
      */
     rangeLimit?: int | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates whether this plugin is active or not.
+     */
+    enabled?: boolean | PropertyBindingInfo | `{${string}}`;
   }
 }
 
@@ -84353,7 +84903,9 @@ declare module "sap/m/plugins/CopyProvider" {
    * must be set for that table to make this plugin work property with range selections. See also the {@link sap.ui.table.plugins.MultiSelectionPlugin#getLimit limit }
    * property of the `MultiSelectionPlugin`.
    *  **Note:** This plugin requires a secure origin, either HTTPS or localhost, in order to access the browser's
-   * clipboard API. For more information, see {@link https://w3c.github.io/webappsec-secure-contexts/}.
+   * clipboard API. For more information, see {@link https://w3c.github.io/webappsec-secure-contexts/}. It
+   * is recommended to check whether the application executes in a secure context before adding the `CopyProvider`
+   * plugin and related functionality, such as the {@link #sap.m.plugins.CellSelector}.
    */
   export default class CopyProvider extends UI5Element {
     /**
@@ -84475,7 +85027,8 @@ declare module "sap/m/plugins/CopyProvider" {
      * Writes the selection data to the system clipboard and returns a `Promise` which resolves once the clipboard's
      * content has been updated.
      *
-     * **Note: ** The user has to interact with the page or a UI element when this API gets called.
+     * **Note:** The user has to interact with the page or a UI element when this API gets called. **Note:**
+     * This plugin requires a secure context in order to access the browser's clipboard API.
      *
      * @returns A `Promise` that is resolved after the selection data has been written to the clipboard
      */
@@ -90726,10 +91279,6 @@ declare module "sap/m/RadioButton" {
        */
       oListener?: object
     ): this;
-    /**
-     * Destroys all related objects to the RadioButton
-     */
-    exit(): void;
     /**
      * @ui5-protected Do not call from applications (only from related classes in the framework)
      *
@@ -122031,6 +122580,8 @@ declare module "sap/m/TabContainer" {
     PropertyBindingInfo,
   } from "sap/ui/base/ManagedObject";
 
+  import Button from "sap/m/Button";
+
   import { PageBackgroundDesign } from "sap/m/library";
 
   import ElementMetadata from "sap/ui/core/ElementMetadata";
@@ -122133,16 +122684,16 @@ declare module "sap/m/TabContainer" {
      * @returns Metadata object describing this class
      */
     static getMetadata(): ElementMetadata;
-    /**	
-     * Adds some item to the aggregation {@link #getItems items}.	
+    /**
+     * Adds a new `TabContainerItem` to the `items` aggregation.
      *
-     * @returns Reference to `this` in order to allow method chaining	
-     */	
-     addItem(	
-      /**	
-       * The item to add; if empty, nothing is inserted	
-       */	
-      oItem: TabContainerItem	
+     * @returns Reference to `this` for method chaining
+     */
+    addItem(
+      /**
+       * The new `TabContainerItem` to be added
+       */
+      oItem: TabContainerItem
     ): this;
     /**
      * Attaches event handler `fnFunction` to the {@link #event:addNewButtonPress addNewButtonPress} event of
@@ -122295,12 +122846,12 @@ declare module "sap/m/TabContainer" {
        */
       oBindingInfo: AggregationBindingInfo
     ): this;
-    /**	
-     * Destroys all the items in the aggregation {@link #getItems items}.	
+    /**
+     * Destroys all `TabContainerItem` entities from the `items` aggregation.
      *
-     * @returns Reference to `this` in order to allow method chaining	
-     */	
-     destroyItems(): this;
+     * @returns Reference to `this` for method chaining
+     */
+    destroyItems(): this;
     /**
      * Detaches event handler `fnFunction` from the {@link #event:addNewButtonPress addNewButtonPress} event
      * of this `sap.m.TabContainer`.
@@ -122399,6 +122950,12 @@ declare module "sap/m/TabContainer" {
       mParameters?: TabContainer$ItemSelectEventParameters
     ): boolean;
     /**
+     * Overrides the addButton property getter to proxy to the `TabStrip`.
+     *
+     * @returns The `Add New Tab` button displayed in the `TabStrip`
+     */
+    getAddButton(): Button;
+    /**
      * @since 1.71
      *
      * Gets current value of property {@link #getBackgroundDesign backgroundDesign}.
@@ -122445,30 +123002,26 @@ declare module "sap/m/TabContainer" {
        */
       oItem: TabContainerItem
     ): int;
-    /**	
-     * Inserts a item into the aggregation {@link #getItems items}.	
+    /**
+     * Inserts a new `TabContainerItem`, to the `items` aggregation, at a specified index.
      *
-     * @returns Reference to `this` in order to allow method chaining	
-     */	
-     insertItem(	
-      /**	
-       * The item to insert; if empty, nothing is inserted	
-       */	
-      oItem: TabContainerItem,	
-      /**	
-       * The `0`-based index the item should be inserted at; for a negative value of `iIndex`, the item is inserted	
-       * at position 0; for a value greater than the current size of the aggregation, the item is inserted at	
-       * the last position	
-       */	
-      iIndex: int	
-    ): this;	
-    /**	
-     * Removes all the controls from the aggregation {@link #getItems items}.	
+     * @returns Reference to `this` for method chaining
+     */
+    insertItem(
+      /**
+       * The new `TabContainerItem` to be inserted
+       */
+      oItem: TabContainerItem,
+      /**
+       * The index where the passed `TabContainerItem` to be inserted
+       */
+      iIndex: int
+    ): this;
+    /**
+     * Removes all `TabContainerItem` entities from the `items` aggregation.
      *
-     * Additionally, it unregisters them from the hosting UIArea.	
-     *
-     * @returns An array of the removed elements (might be empty)	
-     */	
+     * @returns The removed items
+     */
     removeAllItems(): TabContainerItem[];
     /**
      * Removes an item from the aggregation named `items`.
@@ -122481,6 +123034,17 @@ declare module "sap/m/TabContainer" {
        */
       vItem: int | string | TabContainerItem
     ): TabContainerItem | null;
+    /**
+     * Overrides the `addButton` property setter to proxy to the `TabStrip`.
+     *
+     * @returns Reference to `this` for method chaining
+     */
+    setAddButton(
+      /**
+       * The `Add New Tab` button displayed in the `TabStrip`
+       */
+      oButton: Button
+    ): this;
     /**
      * @since 1.71
      *
@@ -123138,7 +123702,7 @@ declare module "sap/m/Table" {
   /**
    * @since 1.16
    *
-   * The `sap.m.Table` control provides a set of sophisticated and convenience functions for responsive table
+   * The `sap.m.Table` control provides a set of sophisticated and easy-to-use functions for responsive table
    * design.
    *
    * To render the `sap.m.Table` control properly, the order of the `columns` aggregation should match with
@@ -123150,6 +123714,9 @@ declare module "sap/m/Table" {
    *
    * For mobile devices, the recommended limit of table rows is 100 (based on 4 columns) to assure proper
    * performance. To improve initial rendering of large tables, use the `growing` feature.
+   *
+   * **Note:** In the `items` aggregation only items which implements the `sap.m.ITableItem` interface must
+   * be used.
    *
    * See section "{@link https://ui5.sap.com/#/topic/5eb6f63e0cc547d0bdc934d3652fdc9b Creating Tables}" and
    * "{@link https://ui5.sap.com/#/topic/38855e06486f4910bfa6f4485f7c2bac Configuring Responsive Behavior of a Table}"
@@ -127304,6 +127871,70 @@ declare module "sap/m/table/columnmenu/QuickTotalItem" {
      * Specifies whether a total for the respective column is shown.
      */
     totaled?: boolean | PropertyBindingInfo | `{${string}}`;
+  }
+}
+
+declare module "sap/m/table/ColumnWidthController" {
+  import SelectionController from "sap/m/p13n/SelectionController";
+
+  import Control from "sap/ui/core/Control";
+
+  import Metadata from "sap/ui/base/Metadata";
+
+  /**
+   * The `ColumnWidthController` entity serves to create table-specific column width personalization changes.
+   */
+  export default class ColumnWidthController extends SelectionController {
+    /**
+     * Constructor for a new `ColumnWidthController`. This controller can be registered using the `sap.m.p13n.Engine`
+     * to persist table column width changes and can be used in combination with `sap.m.Table` and `sap.ui.table.Table`
+     * controls.
+     */
+    constructor(
+      /**
+       * ID for the new control, generated automatically if no ID is given
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control
+       */
+      mSettings?: {
+        /**
+         * The table instance that is personalized by this controller
+         */
+        control: Control;
+      }
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.table.ColumnWidthController with name `sClassName` and enriches
+     * it with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.m.p13n.SelectionController.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, ColumnWidthController>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.table.ColumnWidthController.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): Metadata;
   }
 }
 
@@ -137912,6 +138543,733 @@ declare module "sap/m/TreeItemBase" {
   export interface $TreeItemBaseSettings extends $ListItemBaseSettings {}
 }
 
+declare module "sap/m/upload/ActionsPlaceholder" {
+  import { default as Control, $ControlSettings } from "sap/ui/core/Control";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import { UploadSetwithTableActionPlaceHolder } from "sap/m/library";
+
+  import { PropertyBindingInfo } from "sap/ui/base/ManagedObject";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * The control acts as placeholder to position specific action controls (Upload, PersonalizationSettings,
+   * VariantManagement) on headertoolbar of {@link sap.m.upload.UploadSetwithTable UploadSetwithTable} control.
+   *  The type of action control placed on the headertoolbar is determined by the {@link sap.m.UploadSetwithTableActionPlaceHolder UploadSetwithTableActionPlaceHolder }
+   * enum set.
+   *  This control is supposed to be used only within the headertoolbar aggregation of the {@link sap.m.upload.UploadSetwithTable UploadSetwithTable }
+   * control.
+   */
+  export default class ActionsPlaceholder extends Control {
+    /**
+     * Constructor for a new ActionsPlaceholder.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * initial settings for the new control
+       */
+      mSettings?: $ActionsPlaceholderSettings
+    );
+    /**
+     * Constructor for a new ActionsPlaceholder.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * ID for the new control. It is generated automatically if an ID is not provided.
+       */
+      sId?: string,
+      /**
+       * initial settings for the new control
+       */
+      mSettings?: $ActionsPlaceholderSettings
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.upload.ActionsPlaceholder with name `sClassName` and enriches it
+     * with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.ui.core.Control.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, ActionsPlaceholder>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.upload.ActionsPlaceholder.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Gets current value of property {@link #getPlaceholderFor placeholderFor}.
+     *
+     * Defines the enum value that determines which control gets substituted.
+     *
+     * @returns Value of property `placeholderFor`
+     */
+    getPlaceholderFor():
+      | UploadSetwithTableActionPlaceHolder
+      | keyof typeof UploadSetwithTableActionPlaceHolder;
+    /**
+     * Sets a new value for property {@link #getPlaceholderFor placeholderFor}.
+     *
+     * Defines the enum value that determines which control gets substituted.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setPlaceholderFor(
+      /**
+       * New value for property `placeholderFor`
+       */
+      sPlaceholderFor:
+        | UploadSetwithTableActionPlaceHolder
+        | keyof typeof UploadSetwithTableActionPlaceHolder
+    ): this;
+  }
+
+  export interface $ActionsPlaceholderSettings extends $ControlSettings {
+    /**
+     * Defines the enum value that determines which control gets substituted.
+     */
+    placeholderFor?:
+      | (
+          | UploadSetwithTableActionPlaceHolder
+          | keyof typeof UploadSetwithTableActionPlaceHolder
+        )
+      | PropertyBindingInfo
+      | `{${string}}`;
+  }
+}
+
+declare module "sap/m/upload/Column" {
+  import {
+    default as Column1,
+    $ColumnSettings as $ColumnSettings1,
+  } from "sap/m/Column";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import { PropertyBindingInfo } from "sap/ui/base/ManagedObject";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * The `sap.m.upload.Column` allows defining personalization properties for a column. This Element is built
+   * on {@link sap.m.Column sap.m.column}.
+   *  It is supposed to be used only with the columns aggregation of {@link sap.m.upload.UploadSetwithTable UploadSetwithTable }
+   * control.
+   */
+  export default class Column extends Column1 {
+    /**
+     * Constructor for a new Column.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $ColumnSettings
+    );
+    /**
+     * Constructor for a new Column.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * ID for the new control. It is generated automatically if an ID is not provided.
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $ColumnSettings
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.upload.Column with name `sClassName` and enriches it with the information
+     * contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.m.Column.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, Column>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.upload.Column.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Gets current value of property {@link #getColumnPersonalizationText columnPersonalizationText}.
+     *
+     * Defines the text that is used for column inside personalization dialog.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `columnPersonalizationText`
+     */
+    getColumnPersonalizationText(): string;
+    /**
+     * Gets current value of property {@link #getFilterable filterable}.
+     *
+     * Defines if the column is used in filter panel.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `filterable`
+     */
+    getFilterable(): boolean;
+    /**
+     * Gets current value of property {@link #getGroupable groupable}.
+     *
+     * Defines if the column is used in a group panel.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `groupable`
+     */
+    getGroupable(): boolean;
+    /**
+     * Gets current value of property {@link #getPath path}.
+     *
+     * Defines the model path that is used for applying personalization.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `path`
+     */
+    getPath(): string;
+    /**
+     * Gets current value of property {@link #getSortable sortable}.
+     *
+     * Defines if the column is used in sort panel.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `sortable`
+     */
+    getSortable(): boolean;
+    /**
+     * Sets a new value for property {@link #getColumnPersonalizationText columnPersonalizationText}.
+     *
+     * Defines the text that is used for column inside personalization dialog.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setColumnPersonalizationText(
+      /**
+       * New value for property `columnPersonalizationText`
+       */
+      sColumnPersonalizationText?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getFilterable filterable}.
+     *
+     * Defines if the column is used in filter panel.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setFilterable(
+      /**
+       * New value for property `filterable`
+       */
+      bFilterable?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getGroupable groupable}.
+     *
+     * Defines if the column is used in a group panel.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setGroupable(
+      /**
+       * New value for property `groupable`
+       */
+      bGroupable?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getPath path}.
+     *
+     * Defines the model path that is used for applying personalization.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setPath(
+      /**
+       * New value for property `path`
+       */
+      sPath?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSortable sortable}.
+     *
+     * Defines if the column is used in sort panel.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSortable(
+      /**
+       * New value for property `sortable`
+       */
+      bSortable?: boolean
+    ): this;
+  }
+
+  export interface $ColumnSettings extends $ColumnSettings1 {
+    /**
+     * Defines the text that is used for column inside personalization dialog.
+     */
+    columnPersonalizationText?: string | PropertyBindingInfo;
+
+    /**
+     * Defines the model path that is used for applying personalization.
+     */
+    path?: string | PropertyBindingInfo;
+
+    /**
+     * Defines if the column is used in sort panel.
+     */
+    sortable?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defines if the column is used in a group panel.
+     */
+    groupable?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defines if the column is used in filter panel.
+     */
+    filterable?: boolean | PropertyBindingInfo | `{${string}}`;
+  }
+}
+
+declare module "sap/m/upload/FilePreviewDialog" {
+  import { default as UI5Element, $ElementSettings } from "sap/ui/core/Element";
+
+  import Button from "sap/m/Button";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import {
+    PropertyBindingInfo,
+    AggregationBindingInfo,
+  } from "sap/ui/base/ManagedObject";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * Overview:
+   *
+   * Dialog with a carousel to preview files uploaded using the UploadSetwithTable control. This Element should
+   * only be used within the {@link sap.m.upload.UploadSetwithTable UploadSetwithTable} control as an association.
+   *
+   * Supported File Types for Preview:
+   *
+   * Following are the supported file types that can be previewed:
+   *
+   *
+   * 	 - Image (PNG, JPEG, BMP, GIF)
+   * 	 - PDF
+   * 	 - Text (Txt)
+   * 	 - Video (MP4, MPEG, Quicktime, MsVideo)
+   * 	 - SAP 3D Visual models (VDS)
+   */
+  export default class FilePreviewDialog extends UI5Element {
+    /**
+     * Constructor for a new FilePreviewDialog.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $FilePreviewDialogSettings
+    );
+    /**
+     * Constructor for a new FilePreviewDialog.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Id for the new control, it is generated automatically if no id is provided.
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $FilePreviewDialogSettings
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.upload.FilePreviewDialog with name `sClassName` and enriches it
+     * with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.ui.core.Element.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, FilePreviewDialog>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.upload.FilePreviewDialog.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Adds some additionalFooterButton to the aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    addAdditionalFooterButton(
+      /**
+       * The additionalFooterButton to add; if empty, nothing is inserted
+       */
+      oAdditionalFooterButton: Button
+    ): this;
+    /**
+     * Destroys all the additionalFooterButtons in the aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    destroyAdditionalFooterButtons(): this;
+    /**
+     * Gets content of aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     *
+     * Custom buttons, to be displayed in the preview dialog footer.
+     * Control by default adds two buttons (download and close).
+     */
+    getAdditionalFooterButtons(): Button[];
+    /**
+     * Gets current value of property {@link #getMaxFileSizeforPreview maxFileSizeforPreview}.
+     *
+     * Size limit of the file in megabytes that is allowed to be previewed.
+     * If not set, files of any size can be previewed.
+     *
+     * @returns Value of property `maxFileSizeforPreview`
+     */
+    getMaxFileSizeforPreview(): float;
+    /**
+     * Gets current value of property {@link #getShowCarouselArrows showCarouselArrows}.
+     *
+     * Show or hide carousel's arrows.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `showCarouselArrows`
+     */
+    getShowCarouselArrows(): boolean;
+    /**
+     * Checks for the provided `sap.m.Button` in the aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     * and returns its index if found or -1 otherwise.
+     *
+     * @returns The index of the provided control in the aggregation if found, or -1 otherwise
+     */
+    indexOfAdditionalFooterButton(
+      /**
+       * The additionalFooterButton whose index is looked for
+       */
+      oAdditionalFooterButton: Button
+    ): int;
+    /**
+     * Inserts a additionalFooterButton into the aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    insertAdditionalFooterButton(
+      /**
+       * The additionalFooterButton to insert; if empty, nothing is inserted
+       */
+      oAdditionalFooterButton: Button,
+      /**
+       * The `0`-based index the additionalFooterButton should be inserted at; for a negative value of `iIndex`,
+       * the additionalFooterButton is inserted at position 0; for a value greater than the current size of the
+       * aggregation, the additionalFooterButton is inserted at the last position
+       */
+      iIndex: int
+    ): this;
+    /**
+     * Removes a additionalFooterButton from the aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     *
+     * @returns The removed additionalFooterButton or `null`
+     */
+    removeAdditionalFooterButton(
+      /**
+       * The additionalFooterButton to remove or its index or id
+       */
+      vAdditionalFooterButton: int | string | Button
+    ): Button | null;
+    /**
+     * Removes all the controls from the aggregation {@link #getAdditionalFooterButtons additionalFooterButtons}.
+     *
+     * Additionally, it unregisters them from the hosting UIArea.
+     *
+     * @returns An array of the removed elements (might be empty)
+     */
+    removeAllAdditionalFooterButtons(): Button[];
+    /**
+     * Sets a new value for property {@link #getMaxFileSizeforPreview maxFileSizeforPreview}.
+     *
+     * Size limit of the file in megabytes that is allowed to be previewed.
+     * If not set, files of any size can be previewed.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMaxFileSizeforPreview(
+      /**
+       * New value for property `maxFileSizeforPreview`
+       */
+      fMaxFileSizeforPreview?: float
+    ): this;
+    /**
+     * Sets a new value for property {@link #getShowCarouselArrows showCarouselArrows}.
+     *
+     * Show or hide carousel's arrows.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setShowCarouselArrows(
+      /**
+       * New value for property `showCarouselArrows`
+       */
+      bShowCarouselArrows?: boolean
+    ): this;
+  }
+
+  export interface $FilePreviewDialogSettings extends $ElementSettings {
+    /**
+     * Show or hide carousel's arrows.
+     */
+    showCarouselArrows?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Size limit of the file in megabytes that is allowed to be previewed.
+     * If not set, files of any size can be previewed.
+     */
+    maxFileSizeforPreview?: float | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Custom buttons, to be displayed in the preview dialog footer.
+     * Control by default adds two buttons (download and close).
+     */
+    additionalFooterButtons?:
+      | Button[]
+      | Button
+      | AggregationBindingInfo
+      | `{${string}}`;
+  }
+}
+
+declare module "sap/m/upload/p13n/mediator/BaseMediator" {
+  import BaseObject from "sap/ui/base/Object";
+
+  import Control from "sap/ui/core/Control";
+
+  import UploadSetwithTable from "sap/m/upload/UploadSetwithTable";
+
+  import Metadata from "sap/ui/base/Metadata";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * The `BaseMediator` entity serves as a base class to create control-specific personalization implementations.
+   */
+  export default class BaseMediator extends BaseObject {
+    /**
+     * Constructor for a new `BaseMediator`.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control
+       */
+      mSettings?: {
+        /**
+         * The control instance that is personalized by this mediator
+         */
+        control: Control;
+        /**
+         * The name of the aggregation that is now managed by this mediator
+         */
+        targetAggregation: string;
+        /**
+         * The name of the personalization metadata target that is now managed by this mediator
+         */
+        p13nMetadataTarget: string;
+      }
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.upload.p13n.mediator.BaseMediator with name `sClassName` and enriches
+     * it with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.ui.base.Object.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, BaseMediator>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.upload.p13n.mediator.BaseMediator.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): Metadata;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * An abstract method for applying changes to the upload set table. Essentially, these changes should be
+     * applied after the current data becomes available.
+     */
+    applyStateToTable(): void;
+    /**
+     * Creates a change that can later be handeled by the flexibility layer to apply and revert the change.
+     *
+     * @returns returns the change object.
+     */
+    createChange(
+      /**
+       * expects the name of change which will be later handled in change handlers.
+       */
+      sChangeType: string,
+      /**
+       * expects the changed content which is delta for the specific panel.
+       */
+      oContent: any
+    ): object;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Abstract method for constructing a panel and populating it with data specific to that panel.
+     *
+     * @returns returns a promise with the resolved p13 panel.
+     */
+    createPanel(): Promise<any>;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Abstract method to obtain changes by comparing the old and current states.
+     *
+     * @returns returns array of delta changes
+     */
+    getChanges(): any[];
+    /**
+     * Returns the control instance that has been set
+     *
+     * @returns returns the upload set table control
+     */
+    getControl(): UploadSetwithTable;
+  }
+}
+
 declare module "sap/m/upload/Uploader" {
   import { default as UI5Element, $ElementSettings } from "sap/ui/core/Element";
 
@@ -137940,7 +139298,29 @@ declare module "sap/m/upload/Uploader" {
      * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
      * of the syntax of the settings object.
      */
-    constructor();
+    constructor(
+      /**
+       * Initial settings for the new control
+       */
+      mSettings?: $UploaderSettings
+    );
+    /**
+     * Constructor for a new Uploader.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * ID for the new control, generated automatically if no ID is given
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control
+       */
+      mSettings?: $UploaderSettings
+    );
 
     /**
      * Creates a new subclass of class sap.m.upload.Uploader with name `sClassName` and enriches it with the
@@ -138596,6 +139976,562 @@ declare module "sap/m/upload/UploaderHttpRequestMethod" {
     Put = "PUT",
   }
   export default UploaderHttpRequestMethod;
+}
+
+declare module "sap/m/upload/UploaderTableItem" {
+  import { default as UI5Element, $ElementSettings } from "sap/ui/core/Element";
+
+  import UploadSetwithTableItem from "sap/m/upload/UploadSetwithTableItem";
+
+  import Item from "sap/ui/core/Item";
+
+  import UploaderHttpRequestMethod from "sap/m/upload/UploaderHttpRequestMethod";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import { PropertyBindingInfo } from "sap/ui/base/ManagedObject";
+
+  import Event from "sap/ui/base/Event";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * A basic implementation for uploading and downloading one or multiple files.
+   */
+  export default class UploaderTableItem extends UI5Element {
+    /**
+     * Constructor for a new Uploader.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor();
+
+    /**
+     * Creates a new subclass of class sap.m.upload.UploaderTableItem with name `sClassName` and enriches it
+     * with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.ui.core.Element.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, UploaderTableItem>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.upload.UploaderTableItem.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Starts the function for uploading one file object to a given URL. Returns promise that is resolved when
+     * the upload is finished, or is rejected when the upload fails.
+     *
+     * @returns Promise that is resolved when the upload is finished, or is rejected when the upload fails.
+     */
+    static uploadFile(
+      /**
+       * File or blob object to be uploaded.
+       */
+      oFile: File | Blob,
+      /**
+       * Upload Url.
+       */
+      sUrl: string,
+      /**
+       * Collection of request header fields to be send along.
+       */
+      aHeaderFields?: Item[]
+    ): Promise<any>;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadCompleted uploadCompleted} event of this
+     * `sap.m.upload.UploaderTableItem`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploaderTableItem` itself.
+     *
+     * The event is fired when an XHR request reports successful completion of upload process.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadCompleted(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadCompletedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploaderTableItem` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadCompleted uploadCompleted} event of this
+     * `sap.m.upload.UploaderTableItem`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploaderTableItem` itself.
+     *
+     * The event is fired when an XHR request reports successful completion of upload process.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadCompleted(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadCompletedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploaderTableItem` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadProgressed uploadProgressed} event of
+     * this `sap.m.upload.UploaderTableItem`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploaderTableItem` itself.
+     *
+     * The event is fired every time an XHR request reports progress while uploading.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadProgressed(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadProgressedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploaderTableItem` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadProgressed uploadProgressed} event of
+     * this `sap.m.upload.UploaderTableItem`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploaderTableItem` itself.
+     *
+     * The event is fired every time an XHR request reports progress while uploading.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadProgressed(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadProgressedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploaderTableItem` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadStarted uploadStarted} event of this `sap.m.upload.UploaderTableItem`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploaderTableItem` itself.
+     *
+     * The event is fired just after the POST request is sent.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadStarted(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadStartedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploaderTableItem` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadStarted uploadStarted} event of this `sap.m.upload.UploaderTableItem`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploaderTableItem` itself.
+     *
+     * The event is fired just after the POST request is sent.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadStarted(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadStartedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploaderTableItem` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:uploadCompleted uploadCompleted} event of
+     * this `sap.m.upload.UploaderTableItem`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachUploadCompleted(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadCompletedEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:uploadProgressed uploadProgressed} event of
+     * this `sap.m.upload.UploaderTableItem`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachUploadProgressed(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadProgressedEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:uploadStarted uploadStarted} event of this
+     * `sap.m.upload.UploaderTableItem`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachUploadStarted(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploaderTableItem$UploadStartedEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Starts the process of downloading a file.
+     *
+     * @returns It returns true if the download is processed successfully
+     */
+    download(
+      /**
+       * Item representing the file to be downloaded.
+       */
+      oItem: UploadSetwithTableItem,
+      /**
+       * List of header fields to be added to the GET request.
+       */
+      aHeaderFields: Item[],
+      /**
+       * If it is true, the location of where the file is to be downloaded is queried by a browser dialog.
+       */
+      bAskForLocation: boolean
+    ): boolean;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:uploadCompleted uploadCompleted} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireUploadCompleted(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploaderTableItem$UploadCompletedEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:uploadProgressed uploadProgressed} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireUploadProgressed(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploaderTableItem$UploadProgressedEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:uploadStarted uploadStarted} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireUploadStarted(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploaderTableItem$UploadStartedEventParameters
+    ): this;
+    /**
+     * Gets current value of property {@link #getDownloadUrl downloadUrl}.
+     *
+     * URL where the next file is going to be downloaded from.
+     *
+     * @returns Value of property `downloadUrl`
+     */
+    getDownloadUrl(): string;
+    /**
+     * Gets current value of property {@link #getHttpRequestMethod httpRequestMethod}.
+     *
+     * HTTP request method chosen for file upload.
+     *
+     * Default value is `Post`.
+     *
+     * @returns Value of property `httpRequestMethod`
+     */
+    getHttpRequestMethod(): UploaderHttpRequestMethod;
+    /**
+     * Gets current value of property {@link #getUploadUrl uploadUrl}.
+     *
+     * URL where the next file is going to be uploaded to.
+     *
+     * @returns Value of property `uploadUrl`
+     */
+    getUploadUrl(): string;
+    /**
+     * Gets current value of property {@link #getUseMultipart useMultipart}.
+     *
+     * This property decides the type of request. If set to "true", the request gets sent as a multipart/form-data
+     * request instead of file only request.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `useMultipart`
+     */
+    getUseMultipart(): boolean;
+    /**
+     * Sets a new value for property {@link #getDownloadUrl downloadUrl}.
+     *
+     * URL where the next file is going to be downloaded from.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setDownloadUrl(
+      /**
+       * New value for property `downloadUrl`
+       */
+      sDownloadUrl?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getHttpRequestMethod httpRequestMethod}.
+     *
+     * HTTP request method chosen for file upload.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `Post`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setHttpRequestMethod(
+      /**
+       * New value for property `httpRequestMethod`
+       */
+      sHttpRequestMethod?: UploaderHttpRequestMethod
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUploadUrl uploadUrl}.
+     *
+     * URL where the next file is going to be uploaded to.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploadUrl(
+      /**
+       * New value for property `uploadUrl`
+       */
+      sUploadUrl?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUseMultipart useMultipart}.
+     *
+     * This property decides the type of request. If set to "true", the request gets sent as a multipart/form-data
+     * request instead of file only request.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUseMultipart(
+      /**
+       * New value for property `useMultipart`
+       */
+      bUseMultipart?: boolean
+    ): this;
+    /**
+     * Starts the process of uploading the specified file.
+     */
+    uploadItem(
+      /**
+       * Item representing the file to be uploaded.
+       */
+      oItem: UploadSetwithTableItem,
+      /**
+       * Collection of request header fields to be send along.
+       */
+      aHeaderFields?: Item[]
+    ): void;
+  }
+
+  export interface $UploaderTableItemSettings extends $ElementSettings {
+    /**
+     * URL where the next file is going to be uploaded to.
+     */
+    uploadUrl?: string | PropertyBindingInfo;
+
+    /**
+     * URL where the next file is going to be downloaded from.
+     */
+    downloadUrl?: string | PropertyBindingInfo;
+
+    /**
+     * HTTP request method chosen for file upload.
+     */
+    httpRequestMethod?:
+      | UploaderHttpRequestMethod
+      | PropertyBindingInfo
+      | `{${string}}`;
+
+    /**
+     * This property decides the type of request. If set to "true", the request gets sent as a multipart/form-data
+     * request instead of file only request.
+     */
+    useMultipart?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * The event is fired just after the POST request is sent.
+     */
+    uploadStarted?: (oEvent: UploaderTableItem$UploadStartedEvent) => void;
+
+    /**
+     * The event is fired every time an XHR request reports progress while uploading.
+     */
+    uploadProgressed?: (
+      oEvent: UploaderTableItem$UploadProgressedEvent
+    ) => void;
+
+    /**
+     * The event is fired when an XHR request reports successful completion of upload process.
+     */
+    uploadCompleted?: (oEvent: UploaderTableItem$UploadCompletedEvent) => void;
+  }
+
+  export interface UploaderTableItem$UploadCompletedEventParameters {
+    /**
+     * The item that was uploaded.
+     */
+    item?: UploadSetwithTableItem;
+
+    /**
+     * A JSON object containing the additional response parameters like response, responseXML, readyState, status
+     * and headers. Sample response object:
+     * ```javascript
+     *
+     * {
+     *    response: "\n...\n",
+     *    responseXML: null,
+     *    readyState: 2,
+     *    status: 404,
+     *    headers: "allow: GET, HEAD"
+     * }
+     * ```
+     */
+    responseXHR?: object;
+  }
+
+  export type UploaderTableItem$UploadCompletedEvent = Event<
+    UploaderTableItem$UploadCompletedEventParameters,
+    UploaderTableItem
+  >;
+
+  export interface UploaderTableItem$UploadProgressedEventParameters {
+    /**
+     * The item that is being uploaded.
+     */
+    item?: UploadSetwithTableItem;
+
+    /**
+     * The number of bytes transferred since the beginning of the operation. This doesn't include headers and
+     * other overhead, but only the content itself
+     */
+    loaded?: int;
+
+    /**
+     * The total number of bytes of content that is transferred during the operation. If the total size is unknown,
+     * this value is zero.
+     */
+    total?: int;
+  }
+
+  export type UploaderTableItem$UploadProgressedEvent = Event<
+    UploaderTableItem$UploadProgressedEventParameters,
+    UploaderTableItem
+  >;
+
+  export interface UploaderTableItem$UploadStartedEventParameters {
+    /**
+     * The item that is going to be uploaded.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploaderTableItem$UploadStartedEvent = Event<
+    UploaderTableItem$UploadStartedEventParameters,
+    UploaderTableItem
+  >;
 }
 
 declare module "sap/m/upload/UploadSet" {
@@ -142986,6 +144922,1633 @@ declare module "sap/m/upload/UploadSetToolbarPlaceholder" {
 }
 
 declare module "sap/m/upload/UploadSetwithTable" {
+  import { default as Table, $TableSettings } from "sap/m/Table";
+
+  import Item from "sap/ui/core/Item";
+
+  import Event from "sap/ui/base/Event";
+
+  import { URI, ID } from "sap/ui/core/library";
+
+  import FileUploader from "sap/ui/unified/FileUploader";
+
+  import UploaderHttpRequestMethod from "sap/m/upload/UploaderHttpRequestMethod";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import IllustratedMessageType from "sap/m/IllustratedMessageType";
+
+  import UploaderTableItem from "sap/m/upload/UploaderTableItem";
+
+  import UploadSetwithTableItem from "sap/m/upload/UploadSetwithTableItem";
+
+  import FilePreviewDialog from "sap/m/upload/FilePreviewDialog";
+
+  import {
+    PropertyBindingInfo,
+    AggregationBindingInfo,
+  } from "sap/ui/base/ManagedObject";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * This control allows you to upload one or more files from your device, such as desktop, tablet or phone,
+   * and attach them to your application in a responsive tabular manner.
+   *  This control builds on the {@link sap.m.upload.UploadSet UploadSet} control. Provides flexibility to
+   * tailor the design of the table including columns, cells and the content to suit specific requirements.
+   *
+   * To render the ` sap.m.upload.UploadSetwithTable `control properly, the order of the columns aggregation
+   * should match the order of the cells aggregation (sap.m.upload.UploadSetwithTableItem).
+   *
+   * **Note:** Control recommends to use ` sap.m.upload.Column ` with the columns aggregation. `sap.m.upload.Column`
+   * control is built on ` sap.m.Column ` ({@link sap.m.Column Column}) control and provides ability to define
+   * personalization specific properties for column and is essential to setup personalization for the `sap.m.upload.UploadSetwithTable`
+   * control.
+   */
+  export default class UploadSetwithTable extends Table {
+    /**
+     * Constructor for a new UploadSetwithTable.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $UploadSetwithTableSettings
+    );
+    /**
+     * Constructor for a new UploadSetwithTable.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Id for the new control, it is generated automatically if no id is provided.
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $UploadSetwithTableSettings
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.upload.UploadSetwithTable with name `sClassName` and enriches it
+     * with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.m.Table.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, UploadSetwithTable>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * API to determine the unit for file size in KB/MB/GB. API recommended for file size formatting purpose.
+     *
+     * @returns sFileSizeWithUnit file size in KB/MB/GB default unit is KB
+     */
+    static getFileSizeWithUnits(
+      /**
+       * fileSize to determine units
+       */
+      iFileSize: int
+    ): string;
+    /**
+     * Returns sap icon based on the passed mediaType and filename
+     *
+     * @returns sap icon.
+     */
+    static getIconForFileType(
+      /**
+       * The media type of the selected file
+       */
+      mediaType: string,
+      /**
+       * The name of the selected file
+       */
+      fileName: string
+    ): string;
+    /**
+     * Returns a metadata object for class sap.m.upload.UploadSetwithTable.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Adds some headerField to the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    addHeaderField(
+      /**
+       * The headerField to add; if empty, nothing is inserted
+       */
+      oHeaderField: Item
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:beforeInitiatingItemUpload beforeInitiatingItemUpload }
+     * event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired just before initiating the file upload process when a file is selected to be uploaded.
+     * Use this event to set additional info dynamically, specific for each item before upload process is initiated.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachBeforeInitiatingItemUpload(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (
+        p1: UploadSetwithTable$BeforeInitiatingItemUploadEvent
+      ) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:beforeInitiatingItemUpload beforeInitiatingItemUpload }
+     * event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired just before initiating the file upload process when a file is selected to be uploaded.
+     * Use this event to set additional info dynamically, specific for each item before upload process is initiated.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachBeforeInitiatingItemUpload(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (
+        p1: UploadSetwithTable$BeforeInitiatingItemUploadEvent
+      ) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:beforeUploadStarts beforeUploadStarts} event
+     * of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired right before the upload process begins.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachBeforeUploadStarts(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$BeforeUploadStartsEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:beforeUploadStarts beforeUploadStarts} event
+     * of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired right before the upload process begins.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachBeforeUploadStarts(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$BeforeUploadStartsEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:fileNameLengthExceeded fileNameLengthExceeded }
+     * event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file name length restriction specified
+     *     in the `maxFileNameLength` property.
+     * 	 - When the file name length restriction changes, and the file to be uploaded fails to meet the new
+     *     restriction.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachFileNameLengthExceeded(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileNameLengthExceededEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:fileNameLengthExceeded fileNameLengthExceeded }
+     * event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file name length restriction specified
+     *     in the `maxFileNameLength` property.
+     * 	 - When the file name length restriction changes, and the file to be uploaded fails to meet the new
+     *     restriction.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachFileNameLengthExceeded(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileNameLengthExceededEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:fileSizeExceeded fileSizeExceeded} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file size restriction specified in
+     *     the `maxFileSize` property.
+     * 	 - When the file size restriction changes, and the file to be uploaded fails to meet the new restriction.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachFileSizeExceeded(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileSizeExceededEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:fileSizeExceeded fileSizeExceeded} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file size restriction specified in
+     *     the `maxFileSize` property.
+     * 	 - When the file size restriction changes, and the file to be uploaded fails to meet the new restriction.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachFileSizeExceeded(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileSizeExceededEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:fileTypeMismatch fileTypeMismatch} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file type restriction (`fileType` property).
+     *
+     * 	 - When the file type restriction changes, and the file to be uploaded fails to meet the new restriction.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachFileTypeMismatch(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileTypeMismatchEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:fileTypeMismatch fileTypeMismatch} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file type restriction (`fileType` property).
+     *
+     * 	 - When the file type restriction changes, and the file to be uploaded fails to meet the new restriction.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachFileTypeMismatch(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileTypeMismatchEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:itemDragStart itemDragStart} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired when the user starts dragging an uploaded item.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachItemDragStart(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:itemDragStart itemDragStart} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired when the user starts dragging an uploaded item.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachItemDragStart(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:itemDrop itemDrop} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired when an uploaded item is dropped on the new table row position.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachItemDrop(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:itemDrop itemDrop} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired when an uploaded item is dropped on the new table row position.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachItemDrop(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:itemRenamed itemRenamed} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * The event is triggered when the file name is changed.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachItemRenamed(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$ItemRenamedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:itemRenamed itemRenamed} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * The event is triggered when the file name is changed.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachItemRenamed(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$ItemRenamedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:mediaTypeMismatch mediaTypeMismatch} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the media type restriction specified in
+     *     the `mediaTypes` property.
+     * 	 - When the media type restriction changes, and the file to be uploaded fails to meet the new restriction.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachMediaTypeMismatch(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$MediaTypeMismatchEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:mediaTypeMismatch mediaTypeMismatch} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the media type restriction specified in
+     *     the `mediaTypes` property.
+     * 	 - When the media type restriction changes, and the file to be uploaded fails to meet the new restriction.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachMediaTypeMismatch(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$MediaTypeMismatchEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadCompleted uploadCompleted} event of this
+     * `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired right after the upload process is finished.
+     * Based on the backend response of the application, listeners can use the parameters to determine if the
+     * upload was successful or if it failed.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadCompleted(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$UploadCompletedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:uploadCompleted uploadCompleted} event of this
+     * `sap.m.upload.UploadSetwithTable`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.upload.UploadSetwithTable` itself.
+     *
+     * This event is fired right after the upload process is finished.
+     * Based on the backend response of the application, listeners can use the parameters to determine if the
+     * upload was successful or if it failed.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachUploadCompleted(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$UploadCompletedEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.upload.UploadSetwithTable` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Destroys all the headerFields in the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    destroyHeaderFields(): this;
+    /**
+     * Destroys the uploader in the aggregation {@link #getUploader uploader}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    destroyUploader(): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:beforeInitiatingItemUpload beforeInitiatingItemUpload }
+     * event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachBeforeInitiatingItemUpload(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (
+        p1: UploadSetwithTable$BeforeInitiatingItemUploadEvent
+      ) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:beforeUploadStarts beforeUploadStarts} event
+     * of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachBeforeUploadStarts(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$BeforeUploadStartsEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:fileNameLengthExceeded fileNameLengthExceeded }
+     * event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachFileNameLengthExceeded(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileNameLengthExceededEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:fileSizeExceeded fileSizeExceeded} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachFileSizeExceeded(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileSizeExceededEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:fileTypeMismatch fileTypeMismatch} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachFileTypeMismatch(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$FileTypeMismatchEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:itemDragStart itemDragStart} event of this
+     * `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachItemDragStart(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:itemDrop itemDrop} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachItemDrop(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:itemRenamed itemRenamed} event of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachItemRenamed(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$ItemRenamedEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:mediaTypeMismatch mediaTypeMismatch} event
+     * of this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachMediaTypeMismatch(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$MediaTypeMismatchEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:uploadCompleted uploadCompleted} event of
+     * this `sap.m.upload.UploadSetwithTable`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachUploadCompleted(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: UploadSetwithTable$UploadCompletedEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Invokes native files selection handler.
+     */
+    fileSelectionHandler(): void;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:beforeInitiatingItemUpload beforeInitiatingItemUpload} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireBeforeInitiatingItemUpload(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$BeforeInitiatingItemUploadEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:beforeUploadStarts beforeUploadStarts} to attached listeners.
+     *
+     * Listeners may prevent the default action of this event by calling the `preventDefault` method on the
+     * event object. The return value of this method indicates whether the default action should be executed.
+     *
+     * @returns Whether or not to prevent the default action
+     */
+    fireBeforeUploadStarts(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$BeforeUploadStartsEventParameters
+    ): boolean;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:fileNameLengthExceeded fileNameLengthExceeded} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireFileNameLengthExceeded(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$FileNameLengthExceededEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:fileSizeExceeded fileSizeExceeded} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireFileSizeExceeded(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$FileSizeExceededEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:fileTypeMismatch fileTypeMismatch} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireFileTypeMismatch(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$FileTypeMismatchEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:itemDragStart itemDragStart} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireItemDragStart(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: object
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:itemDrop itemDrop} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireItemDrop(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: object
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:itemRenamed itemRenamed} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireItemRenamed(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$ItemRenamedEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:mediaTypeMismatch mediaTypeMismatch} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireMediaTypeMismatch(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$MediaTypeMismatchEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:uploadCompleted uploadCompleted} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireUploadCompleted(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: UploadSetwithTable$UploadCompletedEventParameters
+    ): this;
+    /**
+     * @experimental (since 1.120)
+     *
+     * Gets current value of property {@link #getCloudFilePickerButtonText cloudFilePickerButtonText}.
+     *
+     * The text of the CloudFile picker button. The default text is "Upload from cloud" (translated to the respective
+     * language).
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `cloudFilePickerButtonText`
+     */
+    getCloudFilePickerButtonText(): string;
+    /**
+     * @experimental (since 1.120)
+     *
+     * Gets current value of property {@link #getCloudFilePickerEnabled cloudFilePickerEnabled}.
+     *
+     * Enables CloudFile picker feature to upload files from cloud.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `cloudFilePickerEnabled`
+     */
+    getCloudFilePickerEnabled(): boolean;
+    /**
+     * @experimental (since 1.120)
+     *
+     * Gets current value of property {@link #getCloudFilePickerServiceUrl cloudFilePickerServiceUrl}.
+     *
+     * Url of the FileShare OData V4 service supplied for CloudFile picker control.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `cloudFilePickerServiceUrl`
+     */
+    getCloudFilePickerServiceUrl(): URI;
+    /**
+     * Returns an instance of the default `sap.ui.unified.FileUploader` icon/button, used for adding files from
+     * the open file dialog of the operating system. It can be customized, for example made invisible or assigned
+     * a different icon.
+     *
+     * @returns Instance of the default `sap.ui.unified.FileUploader`.
+     */
+    getDefaultFileUploader(): FileUploader;
+    /**
+     * Gets current value of property {@link #getDirectory directory}.
+     *
+     * Lets the user upload entire files from directories and sub directories.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `directory`
+     */
+    getDirectory(): boolean;
+    /**
+     * Gets current value of property {@link #getEnableVariantManagement enableVariantManagement}.
+     *
+     * If set to true, the variant management gets enabled.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `enableVariantManagement`
+     */
+    getEnableVariantManagement(): boolean;
+    /**
+     * Gets current value of property {@link #getFileTypes fileTypes}.
+     *
+     * File types that are allowed to be uploaded.
+     * If this property is not set, any file can be uploaded.
+     *
+     * @returns Value of property `fileTypes`
+     */
+    getFileTypes(): string[];
+    /**
+     * Gets content of aggregation {@link #getHeaderFields headerFields}.
+     *
+     * Header fields to be included in the header section of an XHR request.
+     */
+    getHeaderFields(): Item[];
+    /**
+     * Gets current value of property {@link #getHttpRequestMethod httpRequestMethod}.
+     *
+     * HTTP request method chosen for file upload.
+     *
+     * Default value is `Post`.
+     *
+     * @returns Value of property `httpRequestMethod`
+     */
+    getHttpRequestMethod(): UploaderHttpRequestMethod;
+    /**
+     * Gets current value of property {@link #getItemValidationHandler itemValidationHandler}.
+     *
+     * Defines a {@link sap.m.upload.UploadSetwithTable.itemValidationHandler callback function} that is invoked
+     * when each UploadSetwithTableItem is queued up for upload. This callback is invoked with {@link sap.m.upload.UploadSetwithTable.ItemInfo parameters }
+     * and the callback is expected to return a promise to the control. Once the promise is resolved, the control
+     * initiates the upload process. Configure this property only when any additional configuration or validations
+     * are to be performed before the upload of each item. The upload process is triggered manually by resolving
+     * the promise returned to the control.
+     *
+     * @returns Value of property `itemValidationHandler`
+     */
+    getItemValidationHandler(): Function;
+    /**
+     * Gets current value of property {@link #getMaxFileNameLength maxFileNameLength}.
+     *
+     * Defined maximum length for a name of files that are to be uploaded.
+     * If set to `null` or `0`, any file can be uploaded regardless length of its name.
+     *
+     * @returns Value of property `maxFileNameLength`
+     */
+    getMaxFileNameLength(): int;
+    /**
+     * Gets current value of property {@link #getMaxFileSize maxFileSize}.
+     *
+     * Defined size limit in megabytes for files that are to be uploaded.
+     * If set to `null` or `0`, files of any size can be uploaded.
+     *
+     * @returns Value of property `maxFileSize`
+     */
+    getMaxFileSize(): float;
+    /**
+     * Gets current value of property {@link #getMediaTypes mediaTypes}.
+     *
+     * Media types of files that are allowed to be uploaded.
+     * If this property is not set, any file can be uploaded.
+     *
+     * @returns Value of property `mediaTypes`
+     */
+    getMediaTypes(): string[];
+    /**
+     * Gets current value of property {@link #getMultiple multiple}.
+     *
+     * Lets the user select multiple files from the same folder and then upload them.
+     *
+     * If multiple property is set to false, the control shows an error message if more than one file is chosen
+     * for drag & drop.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `multiple`
+     */
+    getMultiple(): boolean;
+    /**
+     * Gets current value of property {@link #getNoDataDescription noDataDescription}.
+     *
+     * Custom text can be defined for the 'No data' text description. Customisation of text can be done for
+     * the empty state of the control.
+     *
+     * Default value is `"Drag and drop files here to upload"`.
+     *
+     * @returns Value of property `noDataDescription`
+     */
+    getNoDataDescription(): string;
+    /**
+     * Gets current value of property {@link #getNoDataIllustrationType noDataIllustrationType}.
+     *
+     * Determines which illustration type is displayed when the control holds no data.
+     *
+     * Default value is `UploadCollection`.
+     *
+     * @returns Value of property `noDataIllustrationType`
+     */
+    getNoDataIllustrationType(): IllustratedMessageType;
+    /**
+     * Gets current value of property {@link #getNoDataText noDataText}.
+     *
+     * Custom text can be defined for the 'No data' text label. Customisation of text can be done for the empty
+     * state of the control.
+     *
+     * Default value is `"No documents available"`.
+     *
+     * @returns Value of property `noDataText`
+     */
+    getNoDataText(): string;
+    /**
+     * ID of the element which is the current target of the association {@link #getPreviewDialog previewDialog},
+     * or `null`.
+     */
+    getPreviewDialog(): ID;
+    /**
+     * Gets current value of property {@link #getUploadButtonInvisible uploadButtonInvisible}.
+     *
+     * If set to true, the button used for uploading files becomes invisible.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `uploadButtonInvisible`
+     */
+    getUploadButtonInvisible(): boolean;
+    /**
+     * Gets current value of property {@link #getUploadEnabled uploadEnabled}.
+     *
+     * Defines whether the upload action is allowed.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `uploadEnabled`
+     */
+    getUploadEnabled(): boolean;
+    /**
+     * Gets content of aggregation {@link #getUploader uploader}.
+     *
+     * Defines the uploader to be used. If not specified, the default implementation is used.
+     */
+    getUploader(): UploaderTableItem;
+    /**
+     * Gets current value of property {@link #getUploadUrl uploadUrl}.
+     *
+     * Url where the uploaded files are stored.
+     *
+     * @returns Value of property `uploadUrl`
+     */
+    getUploadUrl(): string;
+    /**
+     * Checks for the provided `sap.ui.core.Item` in the aggregation {@link #getHeaderFields headerFields}.
+     * and returns its index if found or -1 otherwise.
+     *
+     * @returns The index of the provided control in the aggregation if found, or -1 otherwise
+     */
+    indexOfHeaderField(
+      /**
+       * The headerField whose index is looked for
+       */
+      oHeaderField: Item
+    ): int;
+    /**
+     * Inserts a headerField into the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    insertHeaderField(
+      /**
+       * The headerField to insert; if empty, nothing is inserted
+       */
+      oHeaderField: Item,
+      /**
+       * The `0`-based index the headerField should be inserted at; for a negative value of `iIndex`, the headerField
+       * is inserted at position 0; for a value greater than the current size of the aggregation, the headerField
+       * is inserted at the last position
+       */
+      iIndex: int
+    ): this;
+    /**
+     * Attaches all necessary handlers to the given uploader instance, so that the progress and status of the
+     * upload can be displayed and monitored. This is necessary in case when custom uploader is used.
+     */
+    registerUploaderEvents(
+      /**
+       * Instance of `sap.m.upload.UploaderTableItem` to which the default request handlers are attached.
+       */
+      oUploader: UploaderTableItem
+    ): void;
+    /**
+     * Removes all the controls from the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * Additionally, it unregisters them from the hosting UIArea.
+     *
+     * @returns An array of the removed elements (might be empty)
+     */
+    removeAllHeaderFields(): Item[];
+    /**
+     * Removes a headerField from the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns The removed headerField or `null`
+     */
+    removeHeaderField(
+      /**
+       * The headerField to remove or its index or id
+       */
+      vHeaderField: int | string | Item
+    ): Item | null;
+    /**
+     * API to rename the document of an item.
+     */
+    renameItem(
+      /**
+       * target item.
+       */
+      oItem: UploadSetwithTableItem
+    ): void;
+    /**
+     * @experimental (since 1.120)
+     *
+     * Sets a new value for property {@link #getCloudFilePickerButtonText cloudFilePickerButtonText}.
+     *
+     * The text of the CloudFile picker button. The default text is "Upload from cloud" (translated to the respective
+     * language).
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setCloudFilePickerButtonText(
+      /**
+       * New value for property `cloudFilePickerButtonText`
+       */
+      sCloudFilePickerButtonText?: string
+    ): this;
+    /**
+     * @experimental (since 1.120)
+     *
+     * Sets a new value for property {@link #getCloudFilePickerEnabled cloudFilePickerEnabled}.
+     *
+     * Enables CloudFile picker feature to upload files from cloud.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setCloudFilePickerEnabled(
+      /**
+       * New value for property `cloudFilePickerEnabled`
+       */
+      bCloudFilePickerEnabled?: boolean
+    ): this;
+    /**
+     * @experimental (since 1.120)
+     *
+     * Sets a new value for property {@link #getCloudFilePickerServiceUrl cloudFilePickerServiceUrl}.
+     *
+     * Url of the FileShare OData V4 service supplied for CloudFile picker control.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setCloudFilePickerServiceUrl(
+      /**
+       * New value for property `cloudFilePickerServiceUrl`
+       */
+      sCloudFilePickerServiceUrl?: URI
+    ): this;
+    /**
+     * Sets a new value for property {@link #getDirectory directory}.
+     *
+     * Lets the user upload entire files from directories and sub directories.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setDirectory(
+      /**
+       * New value for property `directory`
+       */
+      bDirectory?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getEnableVariantManagement enableVariantManagement}.
+     *
+     * If set to true, the variant management gets enabled.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setEnableVariantManagement(
+      /**
+       * New value for property `enableVariantManagement`
+       */
+      bEnableVariantManagement?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getFileTypes fileTypes}.
+     *
+     * File types that are allowed to be uploaded.
+     * If this property is not set, any file can be uploaded.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setFileTypes(
+      /**
+       * New value for property `fileTypes`
+       */
+      sFileTypes?: string[]
+    ): this;
+    /**
+     * Sets a new value for property {@link #getHttpRequestMethod httpRequestMethod}.
+     *
+     * HTTP request method chosen for file upload.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `Post`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setHttpRequestMethod(
+      /**
+       * New value for property `httpRequestMethod`
+       */
+      sHttpRequestMethod?: UploaderHttpRequestMethod
+    ): this;
+    /**
+     * Sets a new value for property {@link #getItemValidationHandler itemValidationHandler}.
+     *
+     * Defines a {@link sap.m.upload.UploadSetwithTable.itemValidationHandler callback function} that is invoked
+     * when each UploadSetwithTableItem is queued up for upload. This callback is invoked with {@link sap.m.upload.UploadSetwithTable.ItemInfo parameters }
+     * and the callback is expected to return a promise to the control. Once the promise is resolved, the control
+     * initiates the upload process. Configure this property only when any additional configuration or validations
+     * are to be performed before the upload of each item. The upload process is triggered manually by resolving
+     * the promise returned to the control.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setItemValidationHandler(
+      /**
+       * New value for property `itemValidationHandler`
+       */
+      fnItemValidationHandler?: Function
+    ): this;
+    /**
+     * Sets a new value for property {@link #getMaxFileNameLength maxFileNameLength}.
+     *
+     * Defined maximum length for a name of files that are to be uploaded.
+     * If set to `null` or `0`, any file can be uploaded regardless length of its name.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMaxFileNameLength(
+      /**
+       * New value for property `maxFileNameLength`
+       */
+      iMaxFileNameLength?: int
+    ): this;
+    /**
+     * Sets a new value for property {@link #getMaxFileSize maxFileSize}.
+     *
+     * Defined size limit in megabytes for files that are to be uploaded.
+     * If set to `null` or `0`, files of any size can be uploaded.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMaxFileSize(
+      /**
+       * New value for property `maxFileSize`
+       */
+      fMaxFileSize?: float
+    ): this;
+    /**
+     * Sets a new value for property {@link #getMediaTypes mediaTypes}.
+     *
+     * Media types of files that are allowed to be uploaded.
+     * If this property is not set, any file can be uploaded.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMediaTypes(
+      /**
+       * New value for property `mediaTypes`
+       */
+      sMediaTypes?: string[]
+    ): this;
+    /**
+     * Sets a new value for property {@link #getMultiple multiple}.
+     *
+     * Lets the user select multiple files from the same folder and then upload them.
+     *
+     * If multiple property is set to false, the control shows an error message if more than one file is chosen
+     * for drag & drop.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMultiple(
+      /**
+       * New value for property `multiple`
+       */
+      bMultiple?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getNoDataDescription noDataDescription}.
+     *
+     * Custom text can be defined for the 'No data' text description. Customisation of text can be done for
+     * the empty state of the control.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `"Drag and drop files here to upload"`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setNoDataDescription(
+      /**
+       * New value for property `noDataDescription`
+       */
+      sNoDataDescription?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getNoDataIllustrationType noDataIllustrationType}.
+     *
+     * Determines which illustration type is displayed when the control holds no data.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `UploadCollection`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setNoDataIllustrationType(
+      /**
+       * New value for property `noDataIllustrationType`
+       */
+      sNoDataIllustrationType?: IllustratedMessageType
+    ): this;
+    /**
+     * Sets a new value for property {@link #getNoDataText noDataText}.
+     *
+     * Custom text can be defined for the 'No data' text label. Customisation of text can be done for the empty
+     * state of the control.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `"No documents available"`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setNoDataText(
+      /**
+       * New value for property `noDataText`
+       */
+      sNoDataText?: string
+    ): this;
+    /**
+     * Sets the associated {@link #getPreviewDialog previewDialog}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setPreviewDialog(
+      /**
+       * ID of an element which becomes the new target of this previewDialog association; alternatively, an element
+       * instance may be given
+       */
+      oPreviewDialog: ID | FilePreviewDialog
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUploadButtonInvisible uploadButtonInvisible}.
+     *
+     * If set to true, the button used for uploading files becomes invisible.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploadButtonInvisible(
+      /**
+       * New value for property `uploadButtonInvisible`
+       */
+      bUploadButtonInvisible?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUploadEnabled uploadEnabled}.
+     *
+     * Defines whether the upload action is allowed.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploadEnabled(
+      /**
+       * New value for property `uploadEnabled`
+       */
+      bUploadEnabled?: boolean
+    ): this;
+    /**
+     * Sets the aggregated {@link #getUploader uploader}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploader(
+      /**
+       * The uploader to set
+       */
+      oUploader: UploaderTableItem
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUploadUrl uploadUrl}.
+     *
+     * Url where the uploaded files are stored.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploadUrl(
+      /**
+       * New value for property `uploadUrl`
+       */
+      sUploadUrl?: string
+    ): this;
+    /**
+     * API to upload file using URL
+     *
+     * @returns oItem, UploadSetwithTableItem instance created with the file object.
+     */
+    uploadItemViaUrl(
+      /**
+       * file name to be set for the file that is to be uploaded.
+       */
+      sName: string,
+      /**
+       * Url for the file.
+       */
+      sUrl: string,
+      /**
+       * Promise when resolved, the control initiates the upload process.
+       */
+      oPromise: Promise<any>
+    ): UploadSetwithTableItem;
+    /**
+     * API to upload Item without file
+     *
+     * @returns oItem, UploadSetwithTableItem instance created with the file object.
+     */
+    uploadItemWithoutFile(
+      /**
+       * Promise when resolved, control initiates the upload process.
+       */
+      oPromise: Promise<any>
+    ): UploadSetwithTableItem;
+  }
   /**
    * Item info object sent as paramter to {@link sap.m.upload.UploadSetwithTable.itemValidationHandler itemValidationHandler callback}
    */
@@ -142993,11 +146556,15 @@ declare module "sap/m/upload/UploadSetwithTable" {
     /**
      * Current item queued for upload.
      */
-    oItem: /* was: sap.m.upload.UploadSetwithTableItem */ any;
+    oItem: UploadSetwithTableItem;
     /**
      * Total count of items queued for upload.
      */
     iTotalItemsForUpload: number;
+    /**
+     * Source on which the callback was invoked.
+     */
+    oSource: UploadSetwithTable;
   };
 
   /**
@@ -143006,7 +146573,796 @@ declare module "sap/m/upload/UploadSetwithTable" {
    */
   export type itemValidationHandler = (
     oItemInfo: ItemInfo
-  ) => Promise</* was: sap.m.upload.UploadSetwithTableItem */ any>;
+  ) => Promise<UploadSetwithTableItem>;
+
+  export interface $UploadSetwithTableSettings extends $TableSettings {
+    /**
+     * File types that are allowed to be uploaded.
+     * If this property is not set, any file can be uploaded.
+     */
+    fileTypes?: string[] | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defined maximum length for a name of files that are to be uploaded.
+     * If set to `null` or `0`, any file can be uploaded regardless length of its name.
+     */
+    maxFileNameLength?: int | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defined size limit in megabytes for files that are to be uploaded.
+     * If set to `null` or `0`, files of any size can be uploaded.
+     */
+    maxFileSize?: float | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Media types of files that are allowed to be uploaded.
+     * If this property is not set, any file can be uploaded.
+     */
+    mediaTypes?: string[] | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Custom text can be defined for the 'No data' text label. Customisation of text can be done for the empty
+     * state of the control.
+     */
+    noDataText?: string | PropertyBindingInfo;
+
+    /**
+     * Custom text can be defined for the 'No data' text description. Customisation of text can be done for
+     * the empty state of the control.
+     */
+    noDataDescription?: string | PropertyBindingInfo;
+
+    /**
+     * Url where the uploaded files are stored.
+     */
+    uploadUrl?: string | PropertyBindingInfo;
+
+    /**
+     * HTTP request method chosen for file upload.
+     */
+    httpRequestMethod?:
+      | UploaderHttpRequestMethod
+      | PropertyBindingInfo
+      | `{${string}}`;
+
+    /**
+     * Lets the user select multiple files from the same folder and then upload them.
+     *
+     * If multiple property is set to false, the control shows an error message if more than one file is chosen
+     * for drag & drop.
+     */
+    multiple?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * If set to true, the button used for uploading files becomes invisible.
+     */
+    uploadButtonInvisible?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defines whether the upload action is allowed.
+     */
+    uploadEnabled?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Defines a {@link sap.m.upload.UploadSetwithTable.itemValidationHandler callback function} that is invoked
+     * when each UploadSetwithTableItem is queued up for upload. This callback is invoked with {@link sap.m.upload.UploadSetwithTable.ItemInfo parameters }
+     * and the callback is expected to return a promise to the control. Once the promise is resolved, the control
+     * initiates the upload process. Configure this property only when any additional configuration or validations
+     * are to be performed before the upload of each item. The upload process is triggered manually by resolving
+     * the promise returned to the control.
+     */
+    itemValidationHandler?: Function | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Lets the user upload entire files from directories and sub directories.
+     */
+    directory?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Determines which illustration type is displayed when the control holds no data.
+     */
+    noDataIllustrationType?:
+      | IllustratedMessageType
+      | PropertyBindingInfo
+      | `{${string}}`;
+
+    /**
+     * If set to true, the variant management gets enabled.
+     */
+    enableVariantManagement?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * @experimental (since 1.120)
+     *
+     * Enables CloudFile picker feature to upload files from cloud.
+     */
+    cloudFilePickerEnabled?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * @experimental (since 1.120)
+     *
+     * Url of the FileShare OData V4 service supplied for CloudFile picker control.
+     */
+    cloudFilePickerServiceUrl?: URI | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * @experimental (since 1.120)
+     *
+     * The text of the CloudFile picker button. The default text is "Upload from cloud" (translated to the respective
+     * language).
+     */
+    cloudFilePickerButtonText?: string | PropertyBindingInfo;
+
+    /**
+     * Defines the uploader to be used. If not specified, the default implementation is used.
+     */
+    uploader?: UploaderTableItem;
+
+    /**
+     * Header fields to be included in the header section of an XHR request.
+     */
+    headerFields?: Item[] | Item | AggregationBindingInfo | `{${string}}`;
+
+    /**
+     * Dialog with a carousel to preview files uploaded.
+     * If it is not defined, the control creates and uses the instance of {@link sap.m.upload.FilePreviewDialog FilePreviewDialog}.
+     */
+    previewDialog?: FilePreviewDialog | string;
+
+    /**
+     * The event is triggered when the file name is changed.
+     */
+    itemRenamed?: (oEvent: UploadSetwithTable$ItemRenamedEvent) => void;
+
+    /**
+     * This event is fired right before the upload process begins.
+     */
+    beforeUploadStarts?: (
+      oEvent: UploadSetwithTable$BeforeUploadStartsEvent
+    ) => void;
+
+    /**
+     * This event is fired right after the upload process is finished.
+     * Based on the backend response of the application, listeners can use the parameters to determine if the
+     * upload was successful or if it failed.
+     */
+    uploadCompleted?: (oEvent: UploadSetwithTable$UploadCompletedEvent) => void;
+
+    /**
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file type restriction (`fileType` property).
+     *
+     * 	 - When the file type restriction changes, and the file to be uploaded fails to meet the new restriction.
+     */
+    fileTypeMismatch?: (
+      oEvent: UploadSetwithTable$FileTypeMismatchEvent
+    ) => void;
+
+    /**
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file name length restriction specified
+     *     in the `maxFileNameLength` property.
+     * 	 - When the file name length restriction changes, and the file to be uploaded fails to meet the new
+     *     restriction.
+     */
+    fileNameLengthExceeded?: (
+      oEvent: UploadSetwithTable$FileNameLengthExceededEvent
+    ) => void;
+
+    /**
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the file size restriction specified in
+     *     the `maxFileSize` property.
+     * 	 - When the file size restriction changes, and the file to be uploaded fails to meet the new restriction.
+     */
+    fileSizeExceeded?: (
+      oEvent: UploadSetwithTable$FileSizeExceededEvent
+    ) => void;
+
+    /**
+     * This event is fired in either of the following cases:
+     * 	 - When a file that is selected to be uploaded fails to meet the media type restriction specified in
+     *     the `mediaTypes` property.
+     * 	 - When the media type restriction changes, and the file to be uploaded fails to meet the new restriction.
+     */
+    mediaTypeMismatch?: (
+      oEvent: UploadSetwithTable$MediaTypeMismatchEvent
+    ) => void;
+
+    /**
+     * This event is fired just before initiating the file upload process when a file is selected to be uploaded.
+     * Use this event to set additional info dynamically, specific for each item before upload process is initiated.
+     */
+    beforeInitiatingItemUpload?: (
+      oEvent: UploadSetwithTable$BeforeInitiatingItemUploadEvent
+    ) => void;
+
+    /**
+     * This event is fired when the user starts dragging an uploaded item.
+     */
+    itemDragStart?: (oEvent: Event) => void;
+
+    /**
+     * This event is fired when an uploaded item is dropped on the new table row position.
+     */
+    itemDrop?: (oEvent: Event) => void;
+  }
+
+  export interface UploadSetwithTable$BeforeInitiatingItemUploadEventParameters {
+    /**
+     * Items in ready state for upload process
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$BeforeInitiatingItemUploadEvent = Event<
+    UploadSetwithTable$BeforeInitiatingItemUploadEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$BeforeUploadStartsEventParameters {
+    /**
+     * The file whose upload is just about to start.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$BeforeUploadStartsEvent = Event<
+    UploadSetwithTable$BeforeUploadStartsEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$FileNameLengthExceededEventParameters {
+    /**
+     * The file that fails to meet the file name length restriction specified in the `maxFileNameLength` property.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$FileNameLengthExceededEvent = Event<
+    UploadSetwithTable$FileNameLengthExceededEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$FileSizeExceededEventParameters {
+    /**
+     * The file that fails to meet the file size restriction specified in the `maxFileSize` property.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$FileSizeExceededEvent = Event<
+    UploadSetwithTable$FileSizeExceededEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$FileTypeMismatchEventParameters {
+    /**
+     * The file that fails to meet the file type restriction specified in the `fileType` property.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$FileTypeMismatchEvent = Event<
+    UploadSetwithTable$FileTypeMismatchEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$ItemDragStartEventParameters {}
+
+  export type UploadSetwithTable$ItemDragStartEvent = Event<
+    UploadSetwithTable$ItemDragStartEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$ItemDropEventParameters {}
+
+  export type UploadSetwithTable$ItemDropEvent = Event<
+    UploadSetwithTable$ItemDropEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$ItemRenamedEventParameters {
+    /**
+     * The renamed UI element is of UploadSetwithTableItem type.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$ItemRenamedEvent = Event<
+    UploadSetwithTable$ItemRenamedEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$MediaTypeMismatchEventParameters {
+    /**
+     * The file that fails to meet the media type restriction specified in the `mediaTypes` property.
+     */
+    item?: UploadSetwithTableItem;
+  }
+
+  export type UploadSetwithTable$MediaTypeMismatchEvent = Event<
+    UploadSetwithTable$MediaTypeMismatchEventParameters,
+    UploadSetwithTable
+  >;
+
+  export interface UploadSetwithTable$UploadCompletedEventParameters {
+    /**
+     * The file whose upload has just been completed.
+     */
+    item?: UploadSetwithTableItem;
+
+    /**
+     * Response message that comes from the server.
+     *
+     * On the server side this response has to be put within the "body" tags of the response document
+     * of the iFrame. It can consist of a return code and an optional message. This does not work in cross-domain
+     * scenarios.
+     */
+    response?: string;
+
+    /**
+     * ReadyState of the XHR request.
+     *
+     * Required for receiving a `readyState` is to set the property `sendXHR` to true. This property is not
+     * supported by Internet Explorer 9.
+     */
+    readyState?: string;
+
+    /**
+     * Status of the XHR request.
+     *
+     * Required for receiving a `status` is to set the property `sendXHR` to true. This property is not supported
+     * by Internet Explorer 9.
+     */
+    status?: string;
+
+    /**
+     * Http-Response which comes from the server.
+     *
+     * Required for receiving `responseXML` is to set the property `sendXHR` to true.
+     *
+     * This property is not supported by Internet Explorer 9.
+     */
+    responseXML?: string;
+
+    /**
+     * Http-Response which comes from the server.
+     *
+     * Required for receiving `responseText` is to set the property `sendXHR` to true.
+     *
+     * This property is not supported by Internet Explorer 9.
+     */
+    responseText?: string;
+
+    /**
+     * Http-Response-Headers which come from the server.
+     *
+     * Provided as a JSON-map, i.e. each header-field is reflected by a property in the `headers` object, with
+     * the property value reflecting the header-field's content.
+     *
+     * Required for receiving `headers` is to set the property `sendXHR` to true. This property is not supported
+     * by Internet Explorer 9.
+     */
+    headers?: object;
+  }
+
+  export type UploadSetwithTable$UploadCompletedEvent = Event<
+    UploadSetwithTable$UploadCompletedEventParameters,
+    UploadSetwithTable
+  >;
+}
+
+declare module "sap/m/upload/UploadSetwithTableItem" {
+  import {
+    default as ColumnListItem,
+    $ColumnListItemSettings,
+  } from "sap/m/ColumnListItem";
+
+  import Item from "sap/ui/core/Item";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import { UploadState } from "sap/m/library";
+
+  import {
+    PropertyBindingInfo,
+    AggregationBindingInfo,
+  } from "sap/ui/base/ManagedObject";
+
+  /**
+   * @since 1.120
+   * @experimental (since 1.120)
+   *
+   * `sap.m.UploadSetwithTableItem` represents one item to be uploaded using the {@link sap.m.upload.UploadSetwithTable UploadSetwithTable }
+   * control. This control can be used with the cells aggregation to create rows for the {@link sap.m.upload.UploadSetwithTable UploadSetwithTable }
+   * control. The columns aggregation of the sap.m.upload.UploadSetwithTable should match with the cells aggregation.
+   *
+   * **Note:** This control should only be used within the {@link sap.m.upload.UploadSetwithTable UploadSetwithTable }
+   * control. The inherited counter property of sap.m.ListItemBase is not supported.
+   */
+  export default class UploadSetwithTableItem extends ColumnListItem {
+    /**
+     * Constructor for a new UploadSetwithTableItem.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $UploadSetwithTableItemSettings
+    );
+    /**
+     * Constructor for a new UploadSetwithTableItem.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Id for the new control, it is generated automatically if no ID is provided.
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control.
+       */
+      mSettings?: $UploadSetwithTableItemSettings
+    );
+
+    /**
+     * Creates a new subclass of class sap.m.upload.UploadSetwithTableItem with name `sClassName` and enriches
+     * it with the information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.m.ColumnListItem.extend}.
+     *
+     * @returns Created class / constructor function
+     */
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, UploadSetwithTableItem>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.upload.UploadSetwithTableItem.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Adds some headerField to the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    addHeaderField(
+      /**
+       * The headerField to add; if empty, nothing is inserted
+       */
+      oHeaderField: Item
+    ): this;
+    /**
+     * Destroys all the headerFields in the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    destroyHeaderFields(): this;
+    /**
+     * Downloads the item. Only possible when the item has a valid URL specified in the `url` property.
+     *
+     * @returns `true` if download is possible, `false` otherwise.
+     */
+    download(
+      /**
+       * Whether to ask for a location where to download the file or not.
+       */
+      bAskForLocation: boolean
+    ): boolean;
+    /**
+     * Returns the details of the file selected from the CloudFilePicker control.
+     *
+     * @returns oCloudFileInfo Specifies the details of the file selected from the cloudFilePicker control.
+     */
+    getCloudFileInfo(): /* was: sap.suite.ui.commons.CloudFileInfo */ any;
+    /**
+     * Gets current value of property {@link #getFileName fileName}.
+     *
+     * Specifies the name of the uploaded file.
+     *
+     * @returns Value of property `fileName`
+     */
+    getFileName(): string;
+    /**
+     * Returns file object.
+     *
+     * @returns File object.
+     */
+    getFileObject(): File | Blob;
+    /**
+     * Gets current value of property {@link #getFileSize fileSize}.
+     *
+     * Specifies file size of the item in bytes.
+     *
+     * Default value is `0`.
+     *
+     * @returns Value of property `fileSize`
+     */
+    getFileSize(): float;
+    /**
+     * Gets content of aggregation {@link #getHeaderFields headerFields}.
+     *
+     * Header fields to be included in the header section of an XMLHttpRequest (XHR) request
+     */
+    getHeaderFields(): Item[];
+    /**
+     * Gets current value of property {@link #getMediaType mediaType}.
+     *
+     * Specifies the MIME type of the file.
+     *
+     * @returns Value of property `mediaType`
+     */
+    getMediaType(): string;
+    /**
+     * Gets current value of property {@link #getPreviewable previewable}.
+     *
+     * Specifies whether the item can be previewed.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `previewable`
+     */
+    getPreviewable(): boolean;
+    /**
+     * Gets current value of property {@link #getUploadState uploadState}.
+     *
+     * State of the item relevant to its upload process.
+     *
+     * @returns Value of property `uploadState`
+     */
+    getUploadState(): UploadState | keyof typeof UploadState;
+    /**
+     * Gets current value of property {@link #getUploadUrl uploadUrl}.
+     *
+     * URL where the uploaded files are stored. If empty, uploadUrl from the uploader is considered.
+     *
+     * @returns Value of property `uploadUrl`
+     */
+    getUploadUrl(): string;
+    /**
+     * Gets current value of property {@link #getUrl url}.
+     *
+     * Specifies the URL where the file is located.
+     *
+     * @returns Value of property `url`
+     */
+    getUrl(): string;
+    /**
+     * Checks for the provided `sap.ui.core.Item` in the aggregation {@link #getHeaderFields headerFields}.
+     * and returns its index if found or -1 otherwise.
+     *
+     * @returns The index of the provided control in the aggregation if found, or -1 otherwise
+     */
+    indexOfHeaderField(
+      /**
+       * The headerField whose index is looked for
+       */
+      oHeaderField: Item
+    ): int;
+    /**
+     * Inserts a headerField into the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    insertHeaderField(
+      /**
+       * The headerField to insert; if empty, nothing is inserted
+       */
+      oHeaderField: Item,
+      /**
+       * The `0`-based index the headerField should be inserted at; for a negative value of `iIndex`, the headerField
+       * is inserted at position 0; for a value greater than the current size of the aggregation, the headerField
+       * is inserted at the last position
+       */
+      iIndex: int
+    ): this;
+    /**
+     * Validates if the item is restricted, to check if it is restricted for the file type, media type, maximum
+     * file name length and maximum file size limit.
+     *
+     * @returns `true` if item is restricted, `false` otherwise.
+     */
+    isRestricted(): boolean;
+    /**
+     * Previews pressed file.
+     */
+    openPreview(): void;
+    /**
+     * Removes all the controls from the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * Additionally, it unregisters them from the hosting UIArea.
+     *
+     * @returns An array of the removed elements (might be empty)
+     */
+    removeAllHeaderFields(): Item[];
+    /**
+     * Removes a headerField from the aggregation {@link #getHeaderFields headerFields}.
+     *
+     * @returns The removed headerField or `null`
+     */
+    removeHeaderField(
+      /**
+       * The headerField to remove or its index or id
+       */
+      vHeaderField: int | string | Item
+    ): Item | null;
+    /**
+     * Sets a new value for property {@link #getFileName fileName}.
+     *
+     * Specifies the name of the uploaded file.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setFileName(
+      /**
+       * New value for property `fileName`
+       */
+      sFileName?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getFileSize fileSize}.
+     *
+     * Specifies file size of the item in bytes.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `0`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setFileSize(
+      /**
+       * New value for property `fileSize`
+       */
+      fFileSize?: float
+    ): this;
+    /**
+     * Sets a new value for property {@link #getMediaType mediaType}.
+     *
+     * Specifies the MIME type of the file.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMediaType(
+      /**
+       * New value for property `mediaType`
+       */
+      sMediaType?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getPreviewable previewable}.
+     *
+     * Specifies whether the item can be previewed.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setPreviewable(
+      /**
+       * New value for property `previewable`
+       */
+      bPreviewable?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUploadState uploadState}.
+     *
+     * State of the item relevant to its upload process.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploadState(
+      /**
+       * New value for property `uploadState`
+       */
+      sUploadState?: UploadState | keyof typeof UploadState
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUploadUrl uploadUrl}.
+     *
+     * URL where the uploaded files are stored. If empty, uploadUrl from the uploader is considered.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUploadUrl(
+      /**
+       * New value for property `uploadUrl`
+       */
+      sUploadUrl?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getUrl url}.
+     *
+     * Specifies the URL where the file is located.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setUrl(
+      /**
+       * New value for property `url`
+       */
+      sUrl?: string
+    ): this;
+  }
+
+  export interface $UploadSetwithTableItemSettings
+    extends $ColumnListItemSettings {
+    /**
+     * Specifies the name of the uploaded file.
+     */
+    fileName?: string | PropertyBindingInfo;
+
+    /**
+     * Specifies the MIME type of the file.
+     */
+    mediaType?: string | PropertyBindingInfo;
+
+    /**
+     * Specifies the URL where the file is located.
+     */
+    url?: string | PropertyBindingInfo;
+
+    /**
+     * URL where the uploaded files are stored. If empty, uploadUrl from the uploader is considered.
+     */
+    uploadUrl?: string | PropertyBindingInfo;
+
+    /**
+     * State of the item relevant to its upload process.
+     */
+    uploadState?:
+      | (UploadState | keyof typeof UploadState)
+      | PropertyBindingInfo
+      | `{${string}}`;
+
+    /**
+     * Specifies whether the item can be previewed.
+     */
+    previewable?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Specifies file size of the item in bytes.
+     */
+    fileSize?: float | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Header fields to be included in the header section of an XMLHttpRequest (XHR) request
+     */
+    headerFields?: Item[] | Item | AggregationBindingInfo | `{${string}}`;
+  }
 }
 
 declare module "sap/m/UploadCollection" {
@@ -146760,44 +151116,6 @@ declare module "sap/m/VariantItem" {
      */
     getFavorite(): boolean;
     /**
-     * Gets current value of property {@link #getOriginalContexts originalContexts}.
-     *
-     * Contains the initial value of the property `contexts`. Is used for cancel operations.
-     *
-     * Default value is `{}`.
-     *
-     * @returns Value of property `originalContexts`
-     */
-    getOriginalContexts(): object;
-    /**
-     * Gets current value of property {@link #getOriginalExecuteOnSelect originalExecuteOnSelect}.
-     *
-     * Contains the initial value of the property `executeOnSelect`. Is used for cancel operations.
-     *
-     * Default value is `false`.
-     *
-     * @returns Value of property `originalExecuteOnSelect`
-     */
-    getOriginalExecuteOnSelect(): boolean;
-    /**
-     * Gets current value of property {@link #getOriginalFavorite originalFavorite}.
-     *
-     * Contains the initial value of the property `favorite`. Is used for cancel operations.
-     *
-     * Default value is `true`.
-     *
-     * @returns Value of property `originalFavorite`
-     */
-    getOriginalFavorite(): boolean;
-    /**
-     * Gets current value of property {@link #getOriginalTitle originalTitle}.
-     *
-     * Contains the initial value of the property `title`. Is used for cancel operations.
-     *
-     * @returns Value of property `originalTitle`
-     */
-    getOriginalTitle(): string;
-    /**
      * Gets current value of property {@link #getRemove remove}.
      *
      * Indicates if the item is removable.
@@ -146929,72 +151247,6 @@ declare module "sap/m/VariantItem" {
       bFavorite?: boolean
     ): this;
     /**
-     * Sets a new value for property {@link #getOriginalContexts originalContexts}.
-     *
-     * Contains the initial value of the property `contexts`. Is used for cancel operations.
-     *
-     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
-     *
-     * Default value is `{}`.
-     *
-     * @returns Reference to `this` in order to allow method chaining
-     */
-    setOriginalContexts(
-      /**
-       * New value for property `originalContexts`
-       */
-      oOriginalContexts?: object
-    ): this;
-    /**
-     * Sets a new value for property {@link #getOriginalExecuteOnSelect originalExecuteOnSelect}.
-     *
-     * Contains the initial value of the property `executeOnSelect`. Is used for cancel operations.
-     *
-     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
-     *
-     * Default value is `false`.
-     *
-     * @returns Reference to `this` in order to allow method chaining
-     */
-    setOriginalExecuteOnSelect(
-      /**
-       * New value for property `originalExecuteOnSelect`
-       */
-      bOriginalExecuteOnSelect?: boolean
-    ): this;
-    /**
-     * Sets a new value for property {@link #getOriginalFavorite originalFavorite}.
-     *
-     * Contains the initial value of the property `favorite`. Is used for cancel operations.
-     *
-     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
-     *
-     * Default value is `true`.
-     *
-     * @returns Reference to `this` in order to allow method chaining
-     */
-    setOriginalFavorite(
-      /**
-       * New value for property `originalFavorite`
-       */
-      bOriginalFavorite?: boolean
-    ): this;
-    /**
-     * Sets a new value for property {@link #getOriginalTitle originalTitle}.
-     *
-     * Contains the initial value of the property `title`. Is used for cancel operations.
-     *
-     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
-     *
-     * @returns Reference to `this` in order to allow method chaining
-     */
-    setOriginalTitle(
-      /**
-       * New value for property `originalTitle`
-       */
-      sOriginalTitle?: string
-    ): this;
-    /**
      * Sets a new value for property {@link #getRemove remove}.
      *
      * Indicates if the item is removable.
@@ -147096,19 +151348,9 @@ declare module "sap/m/VariantItem" {
     favorite?: boolean | PropertyBindingInfo | `{${string}}`;
 
     /**
-     * Contains the initial value of the property `favorite`. Is used for cancel operations.
-     */
-    originalFavorite?: boolean | PropertyBindingInfo | `{${string}}`;
-
-    /**
      * Indicates if the item is marked as apply automatically.
      */
     executeOnSelect?: boolean | PropertyBindingInfo | `{${string}}`;
-
-    /**
-     * Contains the initial value of the property `executeOnSelect`. Is used for cancel operations.
-     */
-    originalExecuteOnSelect?: boolean | PropertyBindingInfo | `{${string}}`;
 
     /**
      * Indicates if the item is renamable.
@@ -147119,11 +151361,6 @@ declare module "sap/m/VariantItem" {
      * Contains the title if the item.
      */
     title?: string | PropertyBindingInfo;
-
-    /**
-     * Contains the initial value of the property `title`. Is used for cancel operations.
-     */
-    originalTitle?: string | PropertyBindingInfo;
 
     /**
      * Indicates if the item is visible.
@@ -147144,12 +151381,1285 @@ declare module "sap/m/VariantItem" {
      * Contains the contexts information of the item.
      */
     contexts?: object | PropertyBindingInfo | `{${string}}`;
+  }
+}
+
+declare module "sap/m/VariantManagement" {
+  import { default as Control, $ControlSettings } from "sap/ui/core/Control";
+
+  import { IShrinkable, TitleLevel, CSSSize } from "sap/ui/core/library";
+
+  import { IOverflowToolbarContent } from "sap/m/library";
+
+  import VariantItem from "sap/m/VariantItem";
+
+  import Event from "sap/ui/base/Event";
+
+  import ElementMetadata from "sap/ui/core/ElementMetadata";
+
+  import Title from "sap/m/Title";
+
+  import {
+    PropertyBindingInfo,
+    AggregationBindingInfo,
+  } from "sap/ui/base/ManagedObject";
+
+  /**
+   * @since 1.103
+   *
+   * Can be used to manage variants. You can use this control to create and maintain personalization changes.
+   * The persistency and retrieval of such changes has to be handled by the hosting application.
+   *  **Note:** On the user interface, variants are generally referred to as "views".
+   */
+  export default class VariantManagement
+    extends Control
+    implements
+      IShrinkable,
+      IOverflowToolbarContent,
+      /* was: sap.m.IToolbarInteractiveControl */ Object {
+    __implements__sap_ui_core_IShrinkable: boolean;
+    __implements__sap_m_IOverflowToolbarContent: boolean;
+    __implements__sap_m_IToolbarInteractiveControl: boolean;
+    /**
+     * Constructor for a new `VariantManagement`.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * Initial settings for the new control
+       */
+      mSettings?: $VariantManagementSettings
+    );
+    /**
+     * Constructor for a new `VariantManagement`.
+     *
+     * Accepts an object literal `mSettings` that defines initial property values, aggregated and associated
+     * objects as well as event handlers. See {@link sap.ui.base.ManagedObject#constructor} for a general description
+     * of the syntax of the settings object.
+     */
+    constructor(
+      /**
+       * ID for the new control, generated automatically if no ID is given
+       */
+      sId?: string,
+      /**
+       * Initial settings for the new control
+       */
+      mSettings?: $VariantManagementSettings
+    );
 
     /**
-     * Contains the initial value of the property `contexts`. Is used for cancel operations.
+     * Creates a new subclass of class sap.m.VariantManagement with name `sClassName` and enriches it with the
+     * information contained in `oClassInfo`.
+     *
+     * `oClassInfo` might contain the same kind of information as described in {@link sap.ui.core.Control.extend}.
+     *
+     * @returns Created class / constructor function
      */
-    originalContexts?: object | PropertyBindingInfo | `{${string}}`;
+    static extend<T extends Record<string, unknown>>(
+      /**
+       * Name of the class being created
+       */
+      sClassName: string,
+      /**
+       * Object literal with information about the class
+       */
+      oClassInfo?: sap.ClassInfo<T, VariantManagement>,
+      /**
+       * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+       * used by this class
+       */
+      FNMetaImpl?: Function
+    ): Function;
+    /**
+     * Returns a metadata object for class sap.m.VariantManagement.
+     *
+     * @returns Metadata object describing this class
+     */
+    static getMetadata(): ElementMetadata;
+    /**
+     * Adds some item to the aggregation {@link #getItems items}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    addItem(
+      /**
+       * The item to add; if empty, nothing is inserted
+       */
+      oItem: VariantItem
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:cancel cancel} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when users presses the cancel button inside Save As dialog.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachCancel(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:cancel cancel} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when users presses the cancel button inside Save As dialog.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachCancel(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:manage manage} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when users apply changes variant information in the Manage Views dialog. Some
+     * of the parameters may be ommitted, depending on user selection.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachManage(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$ManageEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:manage manage} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when users apply changes variant information in the Manage Views dialog. Some
+     * of the parameters may be ommitted, depending on user selection.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachManage(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$ManageEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:manageCancel manageCancel} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when users presses the cancel button inside Manage Views dialog.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachManageCancel(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:manageCancel manageCancel} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when users presses the cancel button inside Manage Views dialog.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachManageCancel(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:save save} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when either Save As is triggered from the Save View dialog, or Save
+     * from My Views.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachSave(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$SaveEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:save save} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when either Save As is triggered from the Save View dialog, or Save
+     * from My Views.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachSave(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$SaveEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:select select} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when a new variant is selected.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachSelect(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$SelectEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:select select} event of this `sap.m.VariantManagement`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.VariantManagement` itself.
+     *
+     * This event is fired when a new variant is selected.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachSelect(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$SelectEvent) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.VariantManagement` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Destroys all the items in the aggregation {@link #getItems items}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    destroyItems(): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:cancel cancel} event of this `sap.m.VariantManagement`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachCancel(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:manage manage} event of this `sap.m.VariantManagement`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachManage(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$ManageEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:manageCancel manageCancel} event of this `sap.m.VariantManagement`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachManageCancel(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:save save} event of this `sap.m.VariantManagement`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachSave(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$SaveEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Detaches event handler `fnFunction` from the {@link #event:select select} event of this `sap.m.VariantManagement`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachSelect(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: VariantManagement$SelectEvent) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:cancel cancel} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireCancel(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: object
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:manage manage} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireManage(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: VariantManagement$ManageEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:manageCancel manageCancel} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireManageCancel(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: object
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:save save} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireSave(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: VariantManagement$SaveEventParameters
+    ): this;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Fires event {@link #event:select select} to attached listeners.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireSelect(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: VariantManagement$SelectEventParameters
+    ): this;
+    /**
+     * Gets current value of property {@link #getCreationAllowed creationAllowed}.
+     *
+     * If set to `false` neither 'Save As' nor 'Save' buttons on the 'My Views' dialog are visible.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `creationAllowed`
+     */
+    getCreationAllowed(): boolean;
+    /**
+     * Gets current value of property {@link #getDefaultKey defaultKey}.
+     *
+     * Identifies the defaulted item
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `defaultKey`
+     */
+    getDefaultKey(): string;
+    /**
+     * Gets current value of property {@link #getInErrorState inErrorState}.
+     *
+     * Indicates that the control is in error state. If set to `true`, an error message will be displayed whenever
+     * the variant is opened.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `inErrorState`
+     */
+    getInErrorState(): boolean;
+    /**
+     * Retrieves a variant item by its key.
+     *
+     * @returns For a specific key; `null` if no matching item was found
+     */
+    getItemByKey(
+      /**
+       * of the item
+       */
+      sKey: string
+    ): VariantItem | null;
+    /**
+     * Gets content of aggregation {@link #getItems items}.
+     *
+     * Items displayed by the `VariantManagement` control.
+     */
+    getItems(): VariantItem[];
+    /**
+     * Gets current value of property {@link #getLevel level}.
+     *
+     * Semantic level of the header. For more information, see {@link sap.m.Title#setLevel}.
+     *
+     * Default value is `Auto`.
+     *
+     * @returns Value of property `level`
+     */
+    getLevel(): TitleLevel | keyof typeof TitleLevel;
+    /**
+     * @since 1.109
+     *
+     * Gets current value of property {@link #getMaxWidth maxWidth}.
+     *
+     * Sets the maximum width of the control.
+     *
+     * Default value is `"100%"`.
+     *
+     * @returns Value of property `maxWidth`
+     */
+    getMaxWidth(): CSSSize;
+    /**
+     * Gets current value of property {@link #getModified modified}.
+     *
+     * Indicates if the current variant is modified.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `modified`
+     */
+    getModified(): boolean;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Required by the {@link sap.m.IOverflowToolbarContent} interface. Registers invalidations event which
+     * is fired when width of the control is changed.
+     *
+     * @returns Configuration information for the `sap.m.IOverflowToolbarContent` interface
+     */
+    getOverflowToolbarConfig(): {
+      canOverflow: boolean;
+
+      invalidationEvents: string[];
+    };
+    /**
+     * Gets current value of property {@link #getPopoverTitle popoverTitle}.
+     *
+     * The title in the 'My Views' popover.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `popoverTitle`
+     */
+    getPopoverTitle(): string;
+    /**
+     * Gets current value of property {@link #getSelectedKey selectedKey}.
+     *
+     * Identifies the currently selected item
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Value of property `selectedKey`
+     */
+    getSelectedKey(): string;
+    /**
+     * Gets current value of property {@link #getShowFooter showFooter}.
+     *
+     * Indicates if the buttons and the complete footer in the My Views dialog are visible.
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `showFooter`
+     */
+    getShowFooter(): boolean;
+    /**
+     * Gets current value of property {@link #getShowSaveAs showSaveAs}.
+     *
+     * Controls the visibility of the 'SaveAs' button
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `showSaveAs`
+     */
+    getShowSaveAs(): boolean;
+    /**
+     * Retrieves for the controls {@link sap.ui.comp.SmartVariantManagement} and {@link sap.ui.fl.variants.VariantManagement }
+     * the Standard variant. For all other scenarios the first visible variant will be returned, or `null`
+     * if there are none.
+     *
+     * @returns The key of either the standard variant or the first visible variant or `null`.
+     */
+    getStandardVariantKey(): string | null;
+    /**
+     * Gets current value of property {@link #getSupportApplyAutomatically supportApplyAutomatically}.
+     *
+     * Indicates that apply automatically functionality is supported
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `supportApplyAutomatically`
+     */
+    getSupportApplyAutomatically(): boolean;
+    /**
+     * Gets current value of property {@link #getSupportContexts supportContexts}.
+     *
+     * Indicates that contexts functionality is supported. **Note:** This property is used internally for SAPUI5
+     * Adaptation scenario.
+     *
+     * Default value is `false`.
+     *
+     * @returns Value of property `supportContexts`
+     */
+    getSupportContexts(): boolean;
+    /**
+     * Gets current value of property {@link #getSupportDefault supportDefault}.
+     *
+     * Indicates that default of variants is supported
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `supportDefault`
+     */
+    getSupportDefault(): boolean;
+    /**
+     * Gets current value of property {@link #getSupportFavorites supportFavorites}.
+     *
+     * Indicates that favorite handling is supported
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `supportFavorites`
+     */
+    getSupportFavorites(): boolean;
+    /**
+     * Gets current value of property {@link #getSupportPublic supportPublic}.
+     *
+     * Indicates that public functionality is supported
+     *
+     * Default value is `true`.
+     *
+     * @returns Value of property `supportPublic`
+     */
+    getSupportPublic(): boolean;
+    /**
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * Returns the title control of the `VariantManagement`. This is used in the key user scenario.
+     *
+     * @returns Title part of the `VariantManagement` control.
+     */
+    getTitle(): Title;
+    /**
+     * @since 1.109
+     *
+     * Gets current value of property {@link #getTitleStyle titleStyle}.
+     *
+     * Defines the style of the title. For more information, see {@link sap.m.Title#setTitleStyle}.
+     *
+     * Default value is `Auto`.
+     *
+     * @returns Value of property `titleStyle`
+     */
+    getTitleStyle(): TitleLevel | keyof typeof TitleLevel;
+    /**
+     * Checks for the provided `sap.m.VariantItem` in the aggregation {@link #getItems items}. and returns its
+     * index if found or -1 otherwise.
+     *
+     * @returns The index of the provided control in the aggregation if found, or -1 otherwise
+     */
+    indexOfItem(
+      /**
+       * The item whose index is looked for
+       */
+      oItem: VariantItem
+    ): int;
+    /**
+     * Inserts a item into the aggregation {@link #getItems items}.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    insertItem(
+      /**
+       * The item to insert; if empty, nothing is inserted
+       */
+      oItem: VariantItem,
+      /**
+       * The `0`-based index the item should be inserted at; for a negative value of `iIndex`, the item is inserted
+       * at position 0; for a value greater than the current size of the aggregation, the item is inserted at
+       * the last position
+       */
+      iIndex: int
+    ): this;
+    /**
+     * Removes all the controls from the aggregation {@link #getItems items}.
+     *
+     * Additionally, it unregisters them from the hosting UIArea.
+     *
+     * @returns An array of the removed elements (might be empty)
+     */
+    removeAllItems(): VariantItem[];
+    /**
+     * Removes a item from the aggregation {@link #getItems items}.
+     *
+     * @returns The removed item or `null`
+     */
+    removeItem(
+      /**
+       * The item to remove or its index or id
+       */
+      vItem: int | string | VariantItem
+    ): VariantItem | null;
+    /**
+     * Sets a new value for property {@link #getCreationAllowed creationAllowed}.
+     *
+     * If set to `false` neither 'Save As' nor 'Save' buttons on the 'My Views' dialog are visible.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setCreationAllowed(
+      /**
+       * New value for property `creationAllowed`
+       */
+      bCreationAllowed?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getDefaultKey defaultKey}.
+     *
+     * Identifies the defaulted item
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setDefaultKey(
+      /**
+       * New value for property `defaultKey`
+       */
+      sDefaultKey?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getInErrorState inErrorState}.
+     *
+     * Indicates that the control is in error state. If set to `true`, an error message will be displayed whenever
+     * the variant is opened.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setInErrorState(
+      /**
+       * New value for property `inErrorState`
+       */
+      bInErrorState?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getLevel level}.
+     *
+     * Semantic level of the header. For more information, see {@link sap.m.Title#setLevel}.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `Auto`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setLevel(
+      /**
+       * New value for property `level`
+       */
+      sLevel?: TitleLevel | keyof typeof TitleLevel
+    ): this;
+    /**
+     * @since 1.109
+     *
+     * Sets a new value for property {@link #getMaxWidth maxWidth}.
+     *
+     * Sets the maximum width of the control.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `"100%"`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setMaxWidth(
+      /**
+       * New value for property `maxWidth`
+       */
+      sMaxWidth?: CSSSize
+    ): this;
+    /**
+     * Sets a new value for property {@link #getModified modified}.
+     *
+     * Indicates if the current variant is modified.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setModified(
+      /**
+       * New value for property `modified`
+       */
+      bModified?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getPopoverTitle popoverTitle}.
+     *
+     * The title in the 'My Views' popover.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setPopoverTitle(
+      /**
+       * New value for property `popoverTitle`
+       */
+      sPopoverTitle?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSelectedKey selectedKey}.
+     *
+     * Identifies the currently selected item
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `empty string`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSelectedKey(
+      /**
+       * New value for property `selectedKey`
+       */
+      sSelectedKey?: string
+    ): this;
+    /**
+     * Sets a new value for property {@link #getShowFooter showFooter}.
+     *
+     * Indicates if the buttons and the complete footer in the My Views dialog are visible.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setShowFooter(
+      /**
+       * New value for property `showFooter`
+       */
+      bShowFooter?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getShowSaveAs showSaveAs}.
+     *
+     * Controls the visibility of the 'SaveAs' button
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setShowSaveAs(
+      /**
+       * New value for property `showSaveAs`
+       */
+      bShowSaveAs?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSupportApplyAutomatically supportApplyAutomatically}.
+     *
+     * Indicates that apply automatically functionality is supported
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSupportApplyAutomatically(
+      /**
+       * New value for property `supportApplyAutomatically`
+       */
+      bSupportApplyAutomatically?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSupportContexts supportContexts}.
+     *
+     * Indicates that contexts functionality is supported. **Note:** This property is used internally for SAPUI5
+     * Adaptation scenario.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `false`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSupportContexts(
+      /**
+       * New value for property `supportContexts`
+       */
+      bSupportContexts?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSupportDefault supportDefault}.
+     *
+     * Indicates that default of variants is supported
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSupportDefault(
+      /**
+       * New value for property `supportDefault`
+       */
+      bSupportDefault?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSupportFavorites supportFavorites}.
+     *
+     * Indicates that favorite handling is supported
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSupportFavorites(
+      /**
+       * New value for property `supportFavorites`
+       */
+      bSupportFavorites?: boolean
+    ): this;
+    /**
+     * Sets a new value for property {@link #getSupportPublic supportPublic}.
+     *
+     * Indicates that public functionality is supported
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `true`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setSupportPublic(
+      /**
+       * New value for property `supportPublic`
+       */
+      bSupportPublic?: boolean
+    ): this;
+    /**
+     * @since 1.109
+     *
+     * Sets a new value for property {@link #getTitleStyle titleStyle}.
+     *
+     * Defines the style of the title. For more information, see {@link sap.m.Title#setTitleStyle}.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     * Default value is `Auto`.
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setTitleStyle(
+      /**
+       * New value for property `titleStyle`
+       */
+      sTitleStyle?: TitleLevel | keyof typeof TitleLevel
+    ): this;
   }
+
+  export interface $VariantManagementSettings extends $ControlSettings {
+    /**
+     * Indicates that default of variants is supported
+     */
+    supportDefault?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates that favorite handling is supported
+     */
+    supportFavorites?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates that apply automatically functionality is supported
+     */
+    supportApplyAutomatically?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates that public functionality is supported
+     */
+    supportPublic?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates that contexts functionality is supported. **Note:** This property is used internally for SAPUI5
+     * Adaptation scenario.
+     */
+    supportContexts?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Identifies the currently selected item
+     */
+    selectedKey?: string | PropertyBindingInfo;
+
+    /**
+     * Identifies the defaulted item
+     */
+    defaultKey?: string | PropertyBindingInfo;
+
+    /**
+     * Controls the visibility of the 'SaveAs' button
+     */
+    showSaveAs?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * If set to `false` neither 'Save As' nor 'Save' buttons on the 'My Views' dialog are visible.
+     */
+    creationAllowed?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates if the buttons and the complete footer in the My Views dialog are visible.
+     */
+    showFooter?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Indicates if the current variant is modified.
+     */
+    modified?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * The title in the 'My Views' popover.
+     */
+    popoverTitle?: string | PropertyBindingInfo;
+
+    /**
+     * Indicates that the control is in error state. If set to `true`, an error message will be displayed whenever
+     * the variant is opened.
+     */
+    inErrorState?: boolean | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Semantic level of the header. For more information, see {@link sap.m.Title#setLevel}.
+     */
+    level?:
+      | (TitleLevel | keyof typeof TitleLevel)
+      | PropertyBindingInfo
+      | `{${string}}`;
+
+    /**
+     * @since 1.109
+     *
+     * Defines the style of the title. For more information, see {@link sap.m.Title#setTitleStyle}.
+     */
+    titleStyle?:
+      | (TitleLevel | keyof typeof TitleLevel)
+      | PropertyBindingInfo
+      | `{${string}}`;
+
+    /**
+     * @since 1.109
+     *
+     * Sets the maximum width of the control.
+     */
+    maxWidth?: CSSSize | PropertyBindingInfo | `{${string}}`;
+
+    /**
+     * Items displayed by the `VariantManagement` control.
+     */
+    items?:
+      | VariantItem[]
+      | VariantItem
+      | AggregationBindingInfo
+      | `{${string}}`;
+
+    /**
+     * This event is fired when either Save As is triggered from the Save View dialog, or Save
+     * from My Views.
+     */
+    save?: (oEvent: VariantManagement$SaveEvent) => void;
+
+    /**
+     * This event is fired when users presses the cancel button inside Save As dialog.
+     */
+    cancel?: (oEvent: Event) => void;
+
+    /**
+     * This event is fired when users presses the cancel button inside Manage Views dialog.
+     */
+    manageCancel?: (oEvent: Event) => void;
+
+    /**
+     * This event is fired when users apply changes variant information in the Manage Views dialog. Some
+     * of the parameters may be ommitted, depending on user selection.
+     */
+    manage?: (oEvent: VariantManagement$ManageEvent) => void;
+
+    /**
+     * This event is fired when a new variant is selected.
+     */
+    select?: (oEvent: VariantManagement$SelectEvent) => void;
+  }
+
+  export interface VariantManagement$CancelEventParameters {}
+
+  export type VariantManagement$CancelEvent = Event<
+    VariantManagement$CancelEventParameters,
+    VariantManagement
+  >;
+
+  export interface VariantManagement$ManageEventParameters {
+    /**
+     * List of changed variants. Each entry contains a 'key' - the variant key and a 'name' - the new title
+     * of the variant
+     */
+    renamed?: object[];
+
+    /**
+     * List of deleted variant keys
+     */
+    deleted?: string[];
+
+    /**
+     * List of variant keys and the associated Execute on Selection indicator. Each entry contains a 'key' -
+     * the variant key and a 'exe' - flag describing the intention
+     */
+    exe?: object[];
+
+    /**
+     * List of variant keys and the associated favorite indicator. Each entry contains a 'key' - the variant
+     * key and a 'visible' - flag describing the intention
+     */
+    fav?: object[];
+
+    /**
+     * The default variant key
+     */
+    def?: string;
+
+    /**
+     * List of variant keys and the associated contexts array. Each entry contains a 'key' - the variant key
+     * and a 'contexts' - array describing the contexts
+     */
+    contexts?: object[];
+  }
+
+  export type VariantManagement$ManageEvent = Event<
+    VariantManagement$ManageEventParameters,
+    VariantManagement
+  >;
+
+  export interface VariantManagement$ManageCancelEventParameters {}
+
+  export type VariantManagement$ManageCancelEvent = Event<
+    VariantManagement$ManageCancelEventParameters,
+    VariantManagement
+  >;
+
+  export interface VariantManagement$SaveEventParameters {
+    /**
+     * Variant title
+     */
+    name?: string;
+
+    /**
+     * Indicates if an existing variant is updated or if a new variant is created. Basically 'Save' operation
+     * leads to overwrite `true`, while 'Save As' leads to overwrite `false`.
+     */
+    overwrite?: boolean;
+
+    /**
+     * Variant key. This property is only set, when `overwrite` is set to `true`.
+     */
+    key?: string;
+
+    /**
+     * Apply Automatically indicator
+     */
+    execute?: boolean;
+
+    /**
+     * The default variant indicator
+     */
+    def?: boolean;
+
+    /**
+     * Indicates the check box state for 'Public'.
+     */
+    public?: boolean;
+
+    /**
+     * Array describing the contexts.
+     */
+    contexts?: object[];
+
+    /**
+     * Indicates the check box state for 'Create Tile'. **Note:** This event parameter is used only internally.
+     */
+    tile?: boolean;
+  }
+
+  export type VariantManagement$SaveEvent = Event<
+    VariantManagement$SaveEventParameters,
+    VariantManagement
+  >;
+
+  export interface VariantManagement$SelectEventParameters {
+    /**
+     * Variant key
+     */
+    key?: string;
+  }
+
+  export type VariantManagement$SelectEvent = Event<
+    VariantManagement$SelectEventParameters,
+    VariantManagement
+  >;
 }
 
 declare module "sap/m/VBox" {
@@ -150685,6 +156195,8 @@ declare namespace sap {
 
     "sap/m/Link": undefined;
 
+    "sap/m/LinkTileContent": undefined;
+
     "sap/m/List": undefined;
 
     "sap/m/ListBase": undefined;
@@ -151055,6 +156567,8 @@ declare namespace sap {
 
     "sap/m/table/columnmenu/QuickTotalItem": undefined;
 
+    "sap/m/table/ColumnWidthController": undefined;
+
     "sap/m/table/Util": undefined;
 
     "sap/m/TablePersoController": undefined;
@@ -151103,9 +156617,19 @@ declare namespace sap {
 
     "sap/m/TreeItemBase": undefined;
 
+    "sap/m/upload/ActionsPlaceholder": undefined;
+
+    "sap/m/upload/Column": undefined;
+
+    "sap/m/upload/FilePreviewDialog": undefined;
+
+    "sap/m/upload/p13n/mediator/BaseMediator": undefined;
+
     "sap/m/upload/Uploader": undefined;
 
     "sap/m/upload/UploaderHttpRequestMethod": undefined;
+
+    "sap/m/upload/UploaderTableItem": undefined;
 
     "sap/m/upload/UploadSet": undefined;
 
@@ -151114,6 +156638,8 @@ declare namespace sap {
     "sap/m/upload/UploadSetToolbarPlaceholder": undefined;
 
     "sap/m/upload/UploadSetwithTable": undefined;
+
+    "sap/m/upload/UploadSetwithTableItem": undefined;
 
     "sap/m/UploadCollection": undefined;
 

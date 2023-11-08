@@ -2002,14 +2002,49 @@ declare namespace Office {
      *
      * @remarks
      *
-     *  *Supported applications, by platform*
-     *  <table>
-     *   <tr><th>                             </th><th> Office on Windows </th><th> Office on the web </th></tr>
-     *   <tr><td><strong> Excel      </strong></td><td> Supported         </td><td>                   </td></tr>
-     *   <tr><td><strong> Outlook    </strong></td><td> Preview           </td><td>                   </td></tr>
-     *   <tr><td><strong> PowerPoint </strong></td><td> Supported         </td><td>                   </td></tr>
-     *   <tr><td><strong> Word       </strong></td><td> Supported         </td><td>  Supported        </td></tr>
-     *  </table>
+     * *Supported applications, by platform*
+     * <table>
+     *  <tr>
+     *    <th></th>
+     *    <th>Office on Windows</th>
+     *    <th>Office on the web</th>
+     *    <th>Office on Mac</th>
+     *    <th>Office on iOS</th>
+     *    <th>Office on Android</th>
+     *  </tr>
+     *  <tr>
+     *    <td><strong>Excel</strong></td>
+     *    <td>Supported</td>
+     *    <td>Not available</td>
+     *    <td>Supported</td>
+     *    <td>Supported</td>
+     *    <td>Not available</td>
+     *  </tr>
+     *  <tr>
+     *    <td><strong>Outlook</strong></td>
+     *    <td>Preview</td>
+     *    <td>Not available</td>
+     *    <td>Not available</td>
+     *    <td>Not available</td>
+     *    <td>Not available</td>
+     *  </tr>
+     *  <tr>
+     *    <td><strong>PowerPoint</strong></td>
+     *    <td>Supported</td>
+     *    <td>Not available</td>
+     *    <td>Supported</td>
+     *    <td>Supported</td>
+     *    <td>Not available</td>
+     *  </tr>
+     *  <tr>
+     *    <td><strong>Word</strong></td>
+     *    <td>Supported</td>
+     *    <td>Supported</td>
+     *    <td>Supported</td>
+     *    <td>Supported</td>
+     *    <td>Not available</td>
+     *  </tr>
+     * </table>
      */
     interface OfficeTheme {
         /**
@@ -13082,6 +13117,8 @@ declare namespace Office {
      *
      * @remarks
      *
+     * [Api set: Mailbox 1.1]
+     *
      * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
      *
      * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
@@ -13092,26 +13129,32 @@ declare namespace Office {
      */
     interface Diagnostics {
         /**
-         * Gets a string that represents the name of the Office application.
+         * Gets a string that represents the type of Outlook client.
          *
-         * A string that can be one of the following values: `Outlook`, `OutlookWebApp`, `OutlookIOS`, or `OutlookAndroid`.
-         *
-         * **Note**: The `Outlook` value is returned for Outlook on desktop clients (i.e., Windows and Mac).
+         * The string can be one of the following values: `Outlook`, `newOutlookWindows`, `OutlookWebApp`, `OutlookIOS`, or `OutlookAndroid`.
          *
          * @remarks
+         *
+         * [Api set: Mailbox 1.1]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         *
+         * **Important**: The `Outlook` value is returned for Outlook desktop clients on Windows and on Mac. `newOutlookWindows` is returned for the
+         * {@link https://insider.microsoft365.com/blog/new-outlook-for-windows-available-to-all-office-insiders | new Outlook on Windows desktop client}
+         * currently in preview.
          */
         hostName: string;
         /**
-         * Gets a string that represents the version of either the Office application or the Exchange Server (e.g., "15.0.468.0").
+         * Gets a string that represents the version of either the Outlook client or the Exchange Server (for example, "15.0.468.0").
          *
          * If the mail add-in is running in Outlook on a desktop or mobile client, the `hostVersion` property returns the version of the
-         * application, Outlook. In Outlook on the web, the property returns the version of the Exchange Server.
+         * Outlook client. In Outlook on the web, the property returns the version of the Exchange Server.
          *
          * @remarks
+         *
+         * [Api set: Mailbox 1.1]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
@@ -13136,6 +13179,8 @@ declare namespace Office {
          * desktop computer.
          *
          * @remarks
+         *
+         * [Api set: Mailbox 1.1]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
@@ -112744,7 +112789,7 @@ declare namespace PowerPoint {
         getItemAt(index: number): PowerPoint.SlideLayout;
         /**
          * Gets a layout using its unique ID.  If such a layout does not exist, an object with an `isNullObject` property set to true is returned. For further information,
-                    see {@link https://docs.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods and properties}.
+                    see {@link https://learn.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods and properties}.
          *
          * @remarks
          * [Api set: PowerPointApi 1.3]
@@ -114183,7 +114228,7 @@ declare namespace PowerPoint {
         getItemAt(index: number): PowerPoint.Slide;
         /**
          * Gets a slide using its unique ID. If such a slide does not exist, an object with an `isNullObject` property set to true is returned. For further information,
-                    see {@link https://docs.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods
+                    see {@link https://learn.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods
                     and properties}.
          *
          * @remarks
@@ -114258,7 +114303,7 @@ declare namespace PowerPoint {
         getItemAt(index: number): PowerPoint.Slide;
         /**
          * Gets a slide using its unique ID. If such a slide does not exist, an object with an `isNullObject` property set to true is returned. For further information,
-                    see {@link https://docs.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods
+                    see {@link https://learn.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods
                     and properties}.
          *
          * @remarks
@@ -114333,7 +114378,7 @@ declare namespace PowerPoint {
         getItemAt(index: number): PowerPoint.SlideMaster;
         /**
          * Gets a Slide Master using its unique ID. If such a Slide Master does not exist, an object with an `isNullObject` property set to true is returned.
-                    For further information, see {@link https://docs.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods and properties}."
+                    For further information, see {@link https://learn.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods and properties}."
          *
          * @remarks
          * [Api set: PowerPointApi 1.3]
